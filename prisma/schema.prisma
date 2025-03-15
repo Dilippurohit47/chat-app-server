@@ -3,16 +3,13 @@
 
 // Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
-
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
-
 model User {
   id          String    @id @default(cuid())
   email       String    @unique
@@ -22,7 +19,6 @@ model User {
   receivedMessages Messages[] @relation("ReceivedMessages") 
   createdAt DateTime @default(now())
 }
-
 model Messages {
   id          String   @id @default(uuid())
   content     String
@@ -31,4 +27,4 @@ model Messages {
   receiverId  String
   sender      User     @relation("SentMessages", fields: [senderId], references: [id])  
   receiver    User     @relation("ReceivedMessages", fields: [receiverId], references: [id])  
-}
+} 

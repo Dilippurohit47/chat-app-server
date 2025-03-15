@@ -8,6 +8,7 @@ import userAuth from "./routes/userAuth";
 import Messages from "./routes/messages";
 import cookieParser from "cookie-parser";
 import { saveMessage } from "./routes/messages";
+import { generateUrl } from "./aws";
 const app = express();
 app.use(
   cors({
@@ -70,6 +71,7 @@ wss.on("connection", async (ws, req) => {
       }
     }
   });
+
 
   ws.on("close", () => {
     const userId = Array.from(usersMap.entries()).find(
