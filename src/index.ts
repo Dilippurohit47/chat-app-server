@@ -59,17 +59,17 @@ wss.on("connection", async (ws, req) => {
         usersMap.set(user.id, { ws, userInfo: user });
         const onlineUsers = Array.from(usersMap.entries()).map(
           ([userId, userObj]) => ({
-            userId,
+            userId, 
             ...userObj.userInfo,
           })
         );
         wss.clients.forEach((c) => {
-          c.send(
+          c.send( 
             JSON.stringify({ type: "online-users", onlineUsers: onlineUsers })
-          );
+          );  
         });
       }
-    }
+    } 
   });
 
 
