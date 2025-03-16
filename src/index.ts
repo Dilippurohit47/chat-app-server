@@ -8,7 +8,7 @@ import userAuth from "./routes/userAuth";
 import Messages from "./routes/messages";
 import cookieParser from "cookie-parser";
 import { saveMessage } from "./routes/messages";
-import { generateUrl } from "./aws";
+import awsRoute from "./aws";
 const app = express();
 app.use(
   cors({
@@ -23,6 +23,7 @@ const wss = new WebSocketServer({ server });
 
 app.use("/user", userAuth);
 app.use("/chat", Messages);
+app.use("/aws",awsRoute)
 
 const usersMap = new Map();
 let counter = 1;

@@ -38,6 +38,7 @@ app.post("/sign-in", async (req, res) => {
     res.status(200).json({
       message: "Login successfull",
       token: token,
+      user,
     });
     return;
   } catch (error) {
@@ -50,7 +51,7 @@ app.post("/sign-in", async (req, res) => {
 
 app.post("/sign-up", async (req: Request, res: Response) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password ,profileUrl} = req.body;
 
     if (!name || !email || !password) {
       res.status(404).json({
@@ -64,6 +65,7 @@ app.post("/sign-up", async (req: Request, res: Response) => {
         name: name,
         email: email,
         password: password,
+        profileUrl,
       },
     });
 
@@ -115,6 +117,7 @@ app.get("/all-users", async (req, res) => {
         id: true,
         name: true,
         email: true,
+        profileUrl:true,
       },
       orderBy: {
         createdAt: "asc",

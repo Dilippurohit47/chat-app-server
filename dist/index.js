@@ -21,6 +21,7 @@ const userAuth_1 = __importDefault(require("./routes/userAuth"));
 const messages_1 = __importDefault(require("./routes/messages"));
 const cookie_parser_1 = __importDefault(require("cookie-parser"));
 const messages_2 = require("./routes/messages");
+const aws_1 = __importDefault(require("./aws"));
 const app = (0, express_1.default)();
 app.use((0, cors_1.default)({
     origin: "http://localhost:5173", // Allow frontend URL
@@ -32,6 +33,7 @@ const server = http_1.default.createServer(app);
 const wss = new ws_1.WebSocketServer({ server });
 app.use("/user", userAuth_1.default);
 app.use("/chat", messages_1.default);
+app.use("/aws", aws_1.default);
 const usersMap = new Map();
 let counter = 1;
 wss.on("connection", (ws, req) => __awaiter(void 0, void 0, void 0, function* () {

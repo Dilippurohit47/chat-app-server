@@ -48,6 +48,7 @@ app.post("/sign-in", (req, res) => __awaiter(void 0, void 0, void 0, function* (
         res.status(200).json({
             message: "Login successfull",
             token: token,
+            user,
         });
         return;
     }
@@ -60,7 +61,7 @@ app.post("/sign-in", (req, res) => __awaiter(void 0, void 0, void 0, function* (
 }));
 app.post("/sign-up", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { name, email, password } = req.body;
+        const { name, email, password, profileUrl } = req.body;
         if (!name || !email || !password) {
             res.status(404).json({
                 message: "Please fill all fields",
@@ -72,6 +73,7 @@ app.post("/sign-up", (req, res) => __awaiter(void 0, void 0, void 0, function* (
                 name: name,
                 email: email,
                 password: password,
+                profileUrl,
             },
         });
         (0, helper_1.sendToken)(res, user);
@@ -119,6 +121,7 @@ app.get("/all-users", (req, res) => __awaiter(void 0, void 0, void 0, function* 
                 id: true,
                 name: true,
                 email: true,
+                profileUrl: true,
             },
             orderBy: {
                 createdAt: "asc",

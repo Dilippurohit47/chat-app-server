@@ -12,11 +12,12 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.generateUrl = void 0;
 const client_s3_1 = require("@aws-sdk/client-s3");
 const s3_request_presigner_1 = require("@aws-sdk/s3-request-presigner");
 const dotenv_1 = __importDefault(require("dotenv"));
 dotenv_1.default.config();
+const express_1 = __importDefault(require("express"));
+const app = express_1.default.Router();
 const s3 = new client_s3_1.S3Client({
     region: process.env.AWS_REGION,
     credentials: {
@@ -24,15 +25,22 @@ const s3 = new client_s3_1.S3Client({
         secretAccessKey: process.env.AWS_SECRET_KEY,
     },
 });
-const generateUrl = (fileName, fileType) => __awaiter(void 0, void 0, void 0, function* () {
-    const command = new client_s3_1.PutObjectCommand({
-        Bucket: "chat-app-bucket47",
-        Key: `profile-pictures/${Date.now()}-${"first-upload"}`,
-        ContentType: "jpeg",
-    });
-    const url = yield (0, s3_request_presigner_1.getSignedUrl)(s3, command, { expiresIn: 60 });
-    console.log(url);
-    return url;
-});
-exports.generateUrl = generateUrl;
-console.log((0, exports.generateUrl)());
+app.post("/get-presigned-url-s3", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const command = new client_s3_1.PutObjectCommand({
+            Bucket: "chat-app-bucket47",
+            Key: `profile-pictures/${Date.now()}-${"profile-image"}`,
+            ContentType: "jpeg",
+        });
+        const url = yield (0, s3_request_presigner_1.getSignedUrl)(s3, command, { expiresIn: 60 });
+        res.status(200).json({
+            url
+        });
+    }
+    catch (error) {
+        res.status(500).json({
+            message: "Internal server error"
+        });
+    }
+}));
+exports.default = app;

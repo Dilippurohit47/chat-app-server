@@ -18,6 +18,7 @@ model User {
   sentMessages Messages[] @relation("SentMessages")  
   receivedMessages Messages[] @relation("ReceivedMessages") 
   createdAt DateTime @default(now())
+  profileUrl String?
 }
 model Messages {
   id          String   @id @default(uuid())
