@@ -38,7 +38,9 @@ app.get("/get-messages", (req, res) => __awaiter(void 0, void 0, void 0, functio
     try {
         const { senderId, receiverId } = req.query;
         if (!senderId || !receiverId) {
-            return res.status(400).json({ error: "senderId and receiverId are required" });
+            return res
+                .status(400)
+                .json({ error: "senderId and receiverId are required" });
         }
         // Fetch messages where:
         // - The sender is senderId and receiver is receiverId
@@ -63,6 +65,88 @@ app.get("/get-messages", (req, res) => __awaiter(void 0, void 0, void 0, functio
     catch (error) {
         console.error("Error fetching messages:", error);
         res.status(500).json({ error: "Internal server error" });
+    }
+}));
+app.post("/create-chats", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { userId1, userId2, lastMessage } = req.body;
+        const chat = yield prisma_1.prisma.chat.findFirst({
+            where: {
+                OR: [
+                    { userId1: userId1, userId2: userId2 },
+                    { userId1: userId2, userId2: userId1 },
+                ],
+            },
+        });
+        if (chat) {
+            yield prisma_1.prisma.chat.update({
+                where: {
+                    id: chat.id,
+                },
+                data: {
+                    lastMessage: lastMessage,
+                },
+            });
+        }
+        else {
+            yield prisma_1.prisma.chat.create({
+                data: {
+                    userId1: userId1,
+                    userId2: userId2,
+                    lastMessage: lastMessage,
+                },
+            });
+        }
+        res.json({
+            message: "Chat created",
+        });
+    }
+    catch (error) {
+        console.log(error);
+        res.status(500).json({
+            error: "Internal server error",
+        });
+    }
+}));
+app.get("/get-recent-chats", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const userId = req.query.userId;
+        if (!userId) {
+            res.status(404).json({
+                message: "Login first",
+            });
+            return;
+        }
+        const chats = yield prisma_1.prisma.chat.findMany({
+            where: {
+                OR: [{ userId1: userId }, { userId2: userId }],
+            },
+            orderBy: {
+                lastMessage: "desc",
+            },
+            include: {
+                user1: true,
+                user2: true,
+            }
+        });
+        const formattedChats = chats.map((chat) => {
+            const otherUser = chat.user1.id === userId ? chat.user2 : chat.user1;
+            return {
+                id: chat.id,
+                lastMessage: chat.lastMessage,
+                lastMessageCreatedAt: chat.lastMessageCreatedAt,
+                otherUser
+            };
+        });
+        res.json({
+            chats: formattedChats,
+        });
+        return;
+    }
+    catch (error) {
+        res.status(500).json({
+            message: "Internal server error",
+        });
     }
 }));
 exports.default = app;
