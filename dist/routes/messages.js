@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.saveMessage = void 0;
+exports.sendRecentChats = exports.upsertRecentChats = exports.saveMessage = void 0;
 const prisma_1 = require("../utils/prisma");
 const express_1 = __importDefault(require("express"));
 const saveMessage = (senderId, receiverId, content) => __awaiter(void 0, void 0, void 0, function* () {
@@ -85,6 +85,7 @@ app.post("/create-chats", (req, res) => __awaiter(void 0, void 0, void 0, functi
                 },
                 data: {
                     lastMessage: lastMessage,
+                    lastMessageCreatedAt: new Date()
                 },
             });
         }
@@ -94,6 +95,7 @@ app.post("/create-chats", (req, res) => __awaiter(void 0, void 0, void 0, functi
                     userId1: userId1,
                     userId2: userId2,
                     lastMessage: lastMessage,
+                    lastMessageCreatedAt: new Date()
                 },
             });
         }
@@ -122,7 +124,7 @@ app.get("/get-recent-chats", (req, res) => __awaiter(void 0, void 0, void 0, fun
                 OR: [{ userId1: userId }, { userId2: userId }],
             },
             orderBy: {
-                lastMessage: "desc",
+                lastMessageCreatedAt: "desc",
             },
             include: {
                 user1: true,
@@ -149,4 +151,76 @@ app.get("/get-recent-chats", (req, res) => __awaiter(void 0, void 0, void 0, fun
         });
     }
 }));
+const upsertRecentChats = (userId1, userId2, lastMessage) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const chat = yield prisma_1.prisma.chat.findFirst({
+            where: {
+                OR: [
+                    { userId1: userId1, userId2: userId2 },
+                    { userId1: userId2, userId2: userId1 },
+                ],
+            },
+        });
+        if (chat) {
+            yield prisma_1.prisma.chat.update({
+                where: {
+                    id: chat.id,
+                },
+                data: {
+                    lastMessage: lastMessage,
+                    lastMessageCreatedAt: new Date()
+                },
+            });
+        }
+        else {
+            yield prisma_1.prisma.chat.create({
+                data: {
+                    userId1: userId1,
+                    userId2: userId2,
+                    lastMessage: lastMessage,
+                    lastMessageCreatedAt: new Date()
+                },
+            });
+        }
+        console.log("chat created");
+    }
+    catch (error) {
+        console.log(error);
+    }
+});
+exports.upsertRecentChats = upsertRecentChats;
+const sendRecentChats = (userId) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        if (!userId) {
+            console.log("userId required");
+            return;
+        }
+        const chats = yield prisma_1.prisma.chat.findMany({
+            where: {
+                OR: [{ userId1: userId }, { userId2: userId }],
+            },
+            orderBy: {
+                lastMessageCreatedAt: "desc",
+            },
+            include: {
+                user1: true,
+                user2: true,
+            }
+        });
+        const formattedChats = chats.map((chat) => {
+            const otherUser = chat.user1.id === userId ? chat.user2 : chat.user1;
+            return {
+                id: chat.id,
+                lastMessage: chat.lastMessage,
+                lastMessageCreatedAt: chat.lastMessageCreatedAt,
+                otherUser
+            };
+        });
+        return formattedChats;
+    }
+    catch (error) {
+        console.log(error);
+    }
+});
+exports.sendRecentChats = sendRecentChats;
 exports.default = app;

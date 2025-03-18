@@ -79,6 +79,7 @@ app.post("/create-chats", async (req, res) => {
         },
         data: {
           lastMessage: lastMessage,
+          lastMessageCreatedAt :new Date()
         },
       });
     } else {
@@ -87,6 +88,7 @@ app.post("/create-chats", async (req, res) => {
           userId1: userId1,
           userId2: userId2,
           lastMessage: lastMessage,
+          lastMessageCreatedAt :new Date()
         },
       });
     }
@@ -116,7 +118,7 @@ app.get("/get-recent-chats", async (req, res) => {
         OR: [{ userId1: userId }, { userId2: userId }],
       },
       orderBy: {
-        lastMessage: "desc",
+        lastMessageCreatedAt: "desc",
       },
       include:{
         user1:true,
@@ -145,5 +147,80 @@ app.get("/get-recent-chats", async (req, res) => {
     });
   }
 });
+
+
+export const upsertRecentChats = async(userId1:string,userId2:string ,lastMessage:string ) =>{
+try {
+  const chat = await prisma.chat.findFirst({
+    where: {
+      OR: [
+        { userId1: userId1, userId2: userId2 },
+        { userId1: userId2, userId2: userId1 }, 
+      ],
+    },
+  });
+
+  if (chat) {
+    await prisma.chat.update({
+      where: {
+        id: chat.id,
+      },
+      data: {
+        lastMessage: lastMessage,
+        lastMessageCreatedAt :new Date()
+      },
+    });
+  } else {
+    await prisma.chat.create({
+      data: {
+        userId1: userId1,
+        userId2: userId2,
+        lastMessage: lastMessage,
+        lastMessageCreatedAt :new Date()
+      },
+    });
+  }
+
+  console.log("chat created")
+} catch (error) {
+  console.log(error)
+}
+}
+
+export const sendRecentChats = async(userId:string) =>{
+  try {
+    if (!userId) {
+     console.log("userId required")
+      return
+    }
+    const chats = await prisma.chat.findMany({
+      where: {
+        OR: [{ userId1: userId }, { userId2: userId }],
+      },
+      orderBy: {
+        lastMessageCreatedAt: "desc",
+      },
+      include:{
+        user1:true,
+        user2:true,
+      }
+    });
+
+  
+  const formattedChats = chats.map((chat) =>{
+    const otherUser = chat.user1.id === userId ?  chat.user2 : chat.user1
+    return {
+      id:chat.id,
+      lastMessage:chat.lastMessage,
+      lastMessageCreatedAt: chat.lastMessageCreatedAt,
+      otherUser
+    }
+
+  })
+    return formattedChats
+  } catch (error) {
+   console.log(error)
+  }
+}
 
 export default app;

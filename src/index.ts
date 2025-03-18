@@ -5,7 +5,10 @@ import cors from "cors";
 import { prisma } from "./utils/prisma";
 
 import userAuth from "./routes/userAuth";
-import Messages from "./routes/messages";
+import Messages, {
+  sendRecentChats,
+  upsertRecentChats,
+} from "./routes/messages";
 import cookieParser from "cookie-parser";
 import { saveMessage } from "./routes/messages";
 import awsRoute from "./aws";
@@ -23,7 +26,7 @@ const wss = new WebSocketServer({ server });
 
 app.use("/user", userAuth);
 app.use("/chat", Messages);
-app.use("/aws",awsRoute)
+app.use("/aws", awsRoute);
 
 const usersMap = new Map();
 let counter = 1;
@@ -31,10 +34,9 @@ wss.on("connection", async (ws, req) => {
   console.log("Client connected");
   ws.on("message", async (m) => {
     const data = JSON.parse(m.toString());
-
-    if (data.type === "personal-msg") {
+    if (data.type === "personal-msg") {    
       const receiverId = data.receiverId;
-      if (usersMap.has(receiverId)) {
+      if (usersMap.has(receiverId)) { 
         let { ws } = usersMap.get(receiverId);
         ws.send(
           JSON.stringify({
@@ -44,12 +46,42 @@ wss.on("connection", async (ws, req) => {
             senderId: data.senderId,
           })
         );
-      } 
-      if(data.senderId || receiverId || data.message){
-        saveMessage(data.senderId, receiverId, data.message);
+      }
+      if (data.senderId || receiverId || data.message) {
+       await saveMessage(data.senderId, receiverId, data.message);
+      await upsertRecentChats(data.senderId, receiverId, data.message);
+        const senderRecentChats = await  sendRecentChats(data.senderId);
+        const receiverRecentChats = await sendRecentChats(data.receiverId);
+    
+        if (usersMap.has(data.senderId)) {
+          let senderWs = usersMap.get(data.senderId).ws;
+          if (senderWs && senderWs.readyState === 1) {
+            senderWs.send(
+              JSON.stringify({
+                type: "recent-chats",
+                chats: senderRecentChats,
+              })
+            );
+          } else {
+            console.log(`❌ WebSocket not open for sender (${data.senderId})`);
+          }
+        }
+  
+        if (usersMap.has(receiverId)) {
+          let receiverWs = usersMap.get(receiverId).ws;
+          if (receiverWs && receiverWs.readyState === 1) {
+            receiverWs.send(
+              JSON.stringify({
+                type: "recent-chats",
+                chats: receiverRecentChats,
+              })
+            );
+          } else {
+            console.log(`❌ WebSocket not open for receiver (${receiverId})`);
+          }
+        }
       }
     }
-
     if (data.type === "user-info") {
       const user = await prisma.user.findUnique({
         where: {
@@ -60,19 +92,18 @@ wss.on("connection", async (ws, req) => {
         usersMap.set(user.id, { ws, userInfo: user });
         const onlineUsers = Array.from(usersMap.entries()).map(
           ([userId, userObj]) => ({
-            userId, 
+            userId,
             ...userObj.userInfo,
           })
         );
         wss.clients.forEach((c) => {
-          c.send( 
+          c.send(
             JSON.stringify({ type: "online-users", onlineUsers: onlineUsers })
-          );  
+          );
         });
       }
-    } 
+    }
   });
-
 
   ws.on("close", () => {
     const userId = Array.from(usersMap.entries()).find(
