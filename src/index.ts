@@ -31,7 +31,6 @@ app.use("/aws", awsRoute);
 const usersMap = new Map();
 let counter = 1;
 wss.on("connection", async (ws, req) => {
-  console.log("Client connected");
   ws.on("message", async (m) => {
     const data = JSON.parse(m.toString());
     if (data.type === "personal-msg") {    

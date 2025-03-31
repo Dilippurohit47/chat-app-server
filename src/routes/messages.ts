@@ -62,7 +62,6 @@ app.get("/get-messages", async (req, res) => {
 app.post("/create-chats", async (req, res) => {
   try {
     const { userId1, userId2, lastMessage } = req.body;
-
     const chat = await prisma.chat.findFirst({
       where: {
         OR: [
@@ -119,7 +118,7 @@ app.get("/get-recent-chats", async (req, res) => {
       },
       orderBy: {
         lastMessageCreatedAt: "desc",
-      },
+      }, 
       include:{
         user1:true,
         user2:true,
@@ -130,10 +129,10 @@ app.get("/get-recent-chats", async (req, res) => {
   const formattedChats = chats.map((chat) =>{
     const otherUser = chat.user1.id === userId ?  chat.user2 : chat.user1
     return {
-      id:chat.id,
+      chatId:chat.id,
       lastMessage:chat.lastMessage,
       lastMessageCreatedAt: chat.lastMessageCreatedAt,
-      otherUser
+      ...otherUser,
     }
 
   })
@@ -142,6 +141,7 @@ app.get("/get-recent-chats", async (req, res) => {
     });
     return
   } catch (error) {
+    console.log(error)
     res.status(500).json({
       message: "Internal server error",
     });
@@ -180,7 +180,7 @@ try {
       },
     });
   }
-
+console.log(chat)
   console.log("chat created")
 } catch (error) {
   console.log(error)
@@ -210,10 +210,10 @@ export const sendRecentChats = async(userId:string) =>{
   const formattedChats = chats.map((chat) =>{
     const otherUser = chat.user1.id === userId ?  chat.user2 : chat.user1
     return {
-      id:chat.id,
+      chatId:chat.id,
       lastMessage:chat.lastMessage,
       lastMessageCreatedAt: chat.lastMessageCreatedAt,
-      otherUser
+      ...otherUser,
     }
 
   })
