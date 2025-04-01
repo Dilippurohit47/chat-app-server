@@ -14,14 +14,11 @@ import { saveMessage } from "./routes/messages";
 import awsRoute from "./aws";
 const app = express();
 // https://chat-app-client-tawny.vercel.app/
-app.use(
-  cors({
-    "origin": "*",
-    "methods": "GET,HEAD,PUT,PATCH,POST,DELETE",
-    "preflightContinue": false,
-    "optionsSuccessStatus": 204
-  })
-);
+const corsOptions = {
+  origin: /\.onrender\.com$/,
+  methods: "GET,HEAD,PUT,PATCH,POST,DELETE",};
+app.use(cors(corsOptions));
+
 app.use(express.json());
 app.use(cookieParser());
 const server = http.createServer(app);

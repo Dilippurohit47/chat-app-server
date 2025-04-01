@@ -57,12 +57,11 @@ const messages_2 = require("./routes/messages");
 const aws_1 = __importDefault(require("./aws"));
 const app = (0, express_1.default)();
 // https://chat-app-client-tawny.vercel.app/
-app.use((0, cors_1.default)({
-    "origin": "*",
-    "methods": "GET,HEAD,PUT,PATCH,POST,DELETE",
-    "preflightContinue": false,
-    "optionsSuccessStatus": 204
-}));
+const corsOptions = {
+    origin: /\.onrender\.com$/,
+    methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+};
+app.use((0, cors_1.default)(corsOptions));
 app.use(express_1.default.json());
 app.use((0, cookie_parser_1.default)());
 const server = http_1.default.createServer(app);
