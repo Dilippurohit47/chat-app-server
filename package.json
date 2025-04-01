@@ -7,7 +7,7 @@
     "dev": "concurrently \" tsc --watch \" \"nodemon src/dist/src/index.js\" ",
     "build": "tsc --noEmit || true",
     "migrate":"prisma migrate deploy",
-    "start": "node /dist/src/index.js",
+    "start": "node ./dist/src/index.js",
     "render-deploy":"npm run migrate && npm run build && npm run start"
   },
   "keywords": [],
