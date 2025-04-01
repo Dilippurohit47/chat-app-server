@@ -57,7 +57,7 @@ const messages_2 = require("./routes/messages");
 const aws_1 = __importDefault(require("./aws"));
 const app = (0, express_1.default)();
 app.use((0, cors_1.default)({
-    origin: "http://localhost:5173", // Allow frontend URL
+    origin: ["http://localhost:5173", "https://chat-app-client-tawny.vercel.app/"], // Multiple URLs allowed
     credentials: true, // Allow cookies
 }));
 app.use(express_1.default.json());
