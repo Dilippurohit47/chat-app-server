@@ -15,7 +15,7 @@ import awsRoute from "./aws";
 const app = express();
 app.use(
   cors({
-    origin: "http://localhost:5173", // Allow frontend URL
+    origin: ["http://localhost:5173", "https://chat-app-client-tawny.vercel.app/"], // Multiple URLs allowed
     credentials: true, // Allow cookies
   })
 );
