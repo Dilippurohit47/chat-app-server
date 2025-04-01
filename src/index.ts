@@ -16,9 +16,10 @@ const app = express();
 // https://chat-app-client-tawny.vercel.app/
 app.use(
   cors({
-    origin: ["http://localhost:5173", "https://chat-app-client-tawny.vercel.app/"], 
-    credentials: true, 
-    methods:["GET","POST","PUT"]
+    "origin": "*",
+    "methods": "GET,HEAD,PUT,PATCH,POST,DELETE",
+    "preflightContinue": false,
+    "optionsSuccessStatus": 204
   })
 );
 app.use(express.json());
