@@ -14,12 +14,13 @@ import { saveMessage } from "./routes/messages";
 import awsRoute from "./aws";
 const app = express();
 // https://chat-app-client-tawny.vercel.app/
-const corsOptions = {
-  origin: /\.onrender\.com$/,
-  methods: "GET,HEAD,PUT,PATCH,POST,DELETE",};
-app.use(cors(corsOptions));
+// const corsOptions = {
+//   origin: /\.onrender\.com$/,
+//   methods: "GET,HEAD,PUT,PATCH,POST,DELETE",};
+// app.use(cors(corsOptions));
 
 app.use(express.json());
+app.use(cors())
 app.use(cookieParser());
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
@@ -29,7 +30,10 @@ app.use("/chat", Messages);
 app.use("/aws", awsRoute);
 
 const usersMap = new Map();
-let counter = 1;
+
+app.get("/",(req,res) =>{
+  res.send("server is live");
+})
 wss.on("connection", async (ws, req) => {
   ws.on("message", async (m) => {
     const data = JSON.parse(m.toString());

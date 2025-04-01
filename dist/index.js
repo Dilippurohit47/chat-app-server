@@ -57,12 +57,12 @@ const messages_2 = require("./routes/messages");
 const aws_1 = __importDefault(require("./aws"));
 const app = (0, express_1.default)();
 // https://chat-app-client-tawny.vercel.app/
-const corsOptions = {
-    origin: /\.onrender\.com$/,
-    methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
-};
-app.use((0, cors_1.default)(corsOptions));
+// const corsOptions = {
+//   origin: /\.onrender\.com$/,
+//   methods: "GET,HEAD,PUT,PATCH,POST,DELETE",};
+// app.use(cors(corsOptions));
 app.use(express_1.default.json());
+app.use((0, cors_1.default)());
 app.use((0, cookie_parser_1.default)());
 const server = http_1.default.createServer(app);
 const wss = new ws_1.WebSocketServer({ server });
@@ -70,7 +70,9 @@ app.use("/user", userAuth_1.default);
 app.use("/chat", messages_1.default);
 app.use("/aws", aws_1.default);
 const usersMap = new Map();
-let counter = 1;
+app.get("/", (req, res) => {
+    res.send("server is live");
+});
 wss.on("connection", (ws, req) => __awaiter(void 0, void 0, void 0, function* () {
     ws.on("message", (m) => __awaiter(void 0, void 0, void 0, function* () {
         const data = JSON.parse(m.toString());
