@@ -18,6 +18,8 @@ const sendToken = (res, user) => {
         });
         res.cookie(cookieName, token, {
             httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "none",
             expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
         });
         return token;
