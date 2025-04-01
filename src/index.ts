@@ -22,7 +22,8 @@ const app = express();
 app.use(express.json());
 app.use(cors({
   origin: ["http://localhost:5173","https://chat-app-client-tawny.vercel.app"],
-  credentials:true
+  credentials:true,
+  methods: ["GET", "POST", "PUT", "OPTIONS"]
 }))
 app.use(cookieParser());
 const server = http.createServer(app);
