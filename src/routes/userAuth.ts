@@ -18,7 +18,7 @@ app.post("/sign-in", async (req, res) => {
       where: {
         email: email,
       },
-    });
+    }); 
 
     if (!user) {
       res.status(404).json({
