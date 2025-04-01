@@ -4,10 +4,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "concurrently \" tsc --watch \" \"nodemon src/dist/src/index.js\" ",
-    "build": "tsc --noEmit || true",
+    "dev": "concurrently \" tsc --watch \" \"nodemon ./dist/index.js\" ",
+    "build":"tsc",
     "migrate":"prisma migrate deploy",
-    "start": "node src/dist/src/index.js",
+    "start": "node dist/index.js",
     "render-deploy":"npm run migrate && npm run build && npm run start"
   },
   "keywords": [],
