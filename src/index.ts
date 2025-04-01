@@ -6,7 +6,7 @@ import { prisma } from "./utils/prisma";
 
 import userAuth from "./routes/userAuth";
 import Messages, {
-  sendRecentChats,
+  sendRecentChats, 
   upsertRecentChats,
 } from "./routes/messages";
 import cookieParser from "cookie-parser";
