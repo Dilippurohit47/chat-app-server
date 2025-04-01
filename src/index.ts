@@ -20,7 +20,10 @@ const app = express();
 // app.use(cors(corsOptions));
 
 app.use(express.json());
-app.use(cors())
+app.use(cors({
+  origin: ["http://localhost:5173","https://chat-app-client-tawny.vercel.app"],
+  credentials:true
+}))
 app.use(cookieParser());
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server });

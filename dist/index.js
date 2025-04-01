@@ -62,7 +62,10 @@ const app = (0, express_1.default)();
 //   methods: "GET,HEAD,PUT,PATCH,POST,DELETE",};
 // app.use(cors(corsOptions));
 app.use(express_1.default.json());
-app.use((0, cors_1.default)());
+app.use((0, cors_1.default)({
+    origin: ["http://localhost:5173", "https://chat-app-client-tawny.vercel.app"],
+    credentials: true
+}));
 app.use((0, cookie_parser_1.default)());
 const server = http_1.default.createServer(app);
 const wss = new ws_1.WebSocketServer({ server });
