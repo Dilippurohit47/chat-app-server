@@ -13,10 +13,12 @@ import cookieParser from "cookie-parser";
 import { saveMessage } from "./routes/messages";
 import awsRoute from "./aws";
 const app = express();
+// https://chat-app-client-tawny.vercel.app/
 app.use(
   cors({
-    origin: ["http://localhost:5173", "https://chat-app-client-tawny.vercel.app/"], // Multiple URLs allowed
-    credentials: true, // Allow cookies
+    origin: ["http://localhost:5173", "https://chat-app-client-tawny.vercel.app/"], 
+    credentials: true, 
+    methods:["GET","POST","PUT"]
   })
 );
 app.use(express.json());
