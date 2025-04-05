@@ -104,9 +104,6 @@ wss.on("connection", (ws, req) => __awaiter(void 0, void 0, void 0, function* ()
                             chats: senderRecentChats,
                         }));
                     }
-                    else {
-                        console.log(`❌ WebSocket not open for sender (${data.senderId})`);
-                    }
                 }
                 if (usersMap.has(receiverId)) {
                     let receiverWs = usersMap.get(receiverId).ws;
@@ -135,6 +132,13 @@ wss.on("connection", (ws, req) => __awaiter(void 0, void 0, void 0, function* ()
                     c.send(JSON.stringify({ type: "online-users", onlineUsers: onlineUsers }));
                 });
             }
+        }
+        if (data.type === "get-recent-chats") {
+            const recentChats = yield (0, messages_1.sendRecentChats)(data.userId);
+            usersMap.get(data.userId).ws.send(JSON.stringify({
+                type: "recent-chats",
+                chats: recentChats
+            }));
         }
     }));
     ws.on("close", () => {

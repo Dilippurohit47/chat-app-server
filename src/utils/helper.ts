@@ -20,8 +20,8 @@ export const sendToken = (res:Response, user:UserType) => {
 
     res.cookie(cookieName, token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite:"none",
+      secure: process.env.NODE_ENV === "production", // Secure only in production
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", // "none" in prod, "lax" in dev
       expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
     });
     return token

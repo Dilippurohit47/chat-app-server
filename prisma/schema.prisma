@@ -38,6 +38,7 @@ model Chat {
   userId2 String
   lastMessage String
   lastMessageCreatedAt  DateTime @default(now())
+  unreadCount Json? 
   user1 User @relation(name: "User1", fields: [userId1], references: [id])
   user2 User @relation(name: "User2", fields: [userId2], references: [id])
 }

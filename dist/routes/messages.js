@@ -95,7 +95,8 @@ app.post("/create-chats", (req, res) => __awaiter(void 0, void 0, void 0, functi
                     userId1: userId1,
                     userId2: userId2,
                     lastMessage: lastMessage,
-                    lastMessageCreatedAt: new Date()
+                    lastMessageCreatedAt: new Date(),
+                    unreadCount: { userId: "", unreadMessages: 0 }
                 },
             });
         }
@@ -133,7 +134,7 @@ app.get("/get-recent-chats", (req, res) => __awaiter(void 0, void 0, void 0, fun
         });
         const formattedChats = chats.map((chat) => {
             const otherUser = chat.user1.id === userId ? chat.user2 : chat.user1;
-            return Object.assign({ chatId: chat.id, lastMessage: chat.lastMessage, lastMessageCreatedAt: chat.lastMessageCreatedAt }, otherUser);
+            return Object.assign({ chatId: chat.id, lastMessage: chat.lastMessage, lastMessageCreatedAt: chat.lastMessageCreatedAt, unreadCount: chat.unreadCount }, otherUser);
         });
         res.json({
             chats: formattedChats,
@@ -147,7 +148,42 @@ app.get("/get-recent-chats", (req, res) => __awaiter(void 0, void 0, void 0, fun
         });
     }
 }));
+app.put("/update-unreadmessage-count", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    try {
+        const { userId, chatId } = req.body;
+        const chat = yield prisma_1.prisma.chat.findUnique({
+            where: {
+                id: chatId
+            }
+        });
+        if (((_a = chat === null || chat === void 0 ? void 0 : chat.unreadCount) === null || _a === void 0 ? void 0 : _a.userId) === userId) {
+            yield prisma_1.prisma.chat.update({
+                where: {
+                    id: chatId
+                },
+                data: {
+                    unreadCount: {
+                        userId: null,
+                        unreadMessages: 0
+                    }
+                }
+            });
+        }
+        console.log(chat);
+        res.status(200).json({
+            message: "Unread message count updated successfully",
+        });
+    }
+    catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Internal server error"
+        });
+    }
+}));
 const upsertRecentChats = (userId1, userId2, lastMessage) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
     try {
         const chat = yield prisma_1.prisma.chat.findFirst({
             where: {
@@ -164,7 +200,11 @@ const upsertRecentChats = (userId1, userId2, lastMessage) => __awaiter(void 0, v
                 },
                 data: {
                     lastMessage: lastMessage,
-                    lastMessageCreatedAt: new Date()
+                    lastMessageCreatedAt: new Date(),
+                    unreadCount: {
+                        userId: userId2,
+                        unreadMessages: ((_a = chat.unreadCount) === null || _a === void 0 ? void 0 : _a.unreadMessages) != null ? chat.unreadCount.unreadMessages + 1 : 1
+                    }
                 },
             });
         }
@@ -178,7 +218,6 @@ const upsertRecentChats = (userId1, userId2, lastMessage) => __awaiter(void 0, v
                 },
             });
         }
-        console.log(chat);
         console.log("chat created");
     }
     catch (error) {
@@ -187,6 +226,7 @@ const upsertRecentChats = (userId1, userId2, lastMessage) => __awaiter(void 0, v
 });
 exports.upsertRecentChats = upsertRecentChats;
 const sendRecentChats = (userId) => __awaiter(void 0, void 0, void 0, function* () {
+    console.log("in recen chat send");
     try {
         if (!userId) {
             console.log("userId required");
@@ -206,7 +246,7 @@ const sendRecentChats = (userId) => __awaiter(void 0, void 0, void 0, function* 
         });
         const formattedChats = chats.map((chat) => {
             const otherUser = chat.user1.id === userId ? chat.user2 : chat.user1;
-            return Object.assign({ chatId: chat.id, lastMessage: chat.lastMessage, lastMessageCreatedAt: chat.lastMessageCreatedAt }, otherUser);
+            return Object.assign({ chatId: chat.id, lastMessage: chat.lastMessage, lastMessageCreatedAt: chat.lastMessageCreatedAt, unreadCount: chat.unreadCount }, otherUser);
         });
         return formattedChats;
     }
