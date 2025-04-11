@@ -24,7 +24,6 @@ const saveMessage = (senderId, receiverId, content) => __awaiter(void 0, void 0,
                 content: content,
             },
         });
-        console.log("msg saved");
         return true;
     }
     catch (error) {
@@ -36,31 +35,52 @@ exports.saveMessage = saveMessage;
 const app = express_1.default.Router();
 app.get("/get-messages", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { senderId, receiverId } = req.query;
+        const { senderId, receiverId, cursor } = req.query;
+        const limit = parseInt(req.query.limit) || 20;
+        const cursorObj = cursor ? JSON.parse(cursor) : null;
         if (!senderId || !receiverId) {
-            return res
-                .status(400)
-                .json({ error: "senderId and receiverId are required" });
+            return res.status(400).json({ error: "senderId and receiverId are required" });
         }
-        // Fetch messages where:
-        // - The sender is senderId and receiver is receiverId
-        // - OR the sender is receiverId and receiver is senderId
         const messages = yield prisma_1.prisma.messages.findMany({
+            take: limit + 1, // Fetch 1 extra to check for more
             where: {
                 OR: [
-                    { senderId, receiverId }, // Messages sent by senderId to receiverId
-                    { senderId: receiverId, receiverId: senderId }, // Messages sent by receiverId to senderId
-                ],
+                    // Case 1: Older messages in this chat
+                    {
+                        OR: [
+                            { senderId: senderId, receiverId: receiverId },
+                            { senderId: receiverId, receiverId: senderId },
+                        ],
+                        createdAt: { lt: (cursorObj === null || cursorObj === void 0 ? void 0 : cursorObj.createdAt) ? new Date(cursorObj.createdAt) : undefined }
+                    },
+                    // Case 2: Same timestamp but older ID (tiebreaker)
+                    ...(cursorObj ? [{
+                            OR: [
+                                { senderId: senderId, receiverId: receiverId },
+                                { senderId: receiverId, receiverId: senderId },
+                            ],
+                            createdAt: new Date(cursorObj.createdAt),
+                            id: { lt: cursorObj.id }
+                        }] : [])
+                ].filter(Boolean) // Remove empty conditions if no cursor
             },
-            orderBy: {
-                createdAt: "asc", // Order messages by creation time (oldest first)
-            },
-            include: {
-                sender: true, // Include sender details
-                receiver: true, // Include receiver details
-            },
+            orderBy: [
+                { createdAt: 'desc' },
+                { id: 'desc' },
+            ],
+            include: { sender: true, receiver: true }
         });
-        res.status(200).json(messages);
+        const hasMore = messages.length > limit;
+        const messagesToSend = hasMore ? messages.slice(0, limit) : messages;
+        const lastMessage = messagesToSend[messagesToSend.length - 1];
+        res.status(200).json({
+            messages: messagesToSend,
+            cursor: hasMore ? {
+                createdAt: lastMessage.createdAt,
+                id: lastMessage.id
+            } : null,
+            hasMore
+        });
     }
     catch (error) {
         console.error("Error fetching messages:", error);
@@ -170,7 +190,6 @@ app.put("/update-unreadmessage-count", (req, res) => __awaiter(void 0, void 0, v
                 }
             });
         }
-        console.log(chat);
         res.status(200).json({
             message: "Unread message count updated successfully",
         });
@@ -218,7 +237,6 @@ const upsertRecentChats = (userId1, userId2, lastMessage) => __awaiter(void 0, v
                 },
             });
         }
-        console.log("chat created");
     }
     catch (error) {
         console.log(error);
@@ -226,7 +244,6 @@ const upsertRecentChats = (userId1, userId2, lastMessage) => __awaiter(void 0, v
 });
 exports.upsertRecentChats = upsertRecentChats;
 const sendRecentChats = (userId) => __awaiter(void 0, void 0, void 0, function* () {
-    console.log("in recen chat send");
     try {
         if (!userId) {
             console.log("userId required");

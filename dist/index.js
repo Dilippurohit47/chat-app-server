@@ -79,6 +79,7 @@ app.get("/", (req, res) => {
 });
 wss.on("connection", (ws, req) => __awaiter(void 0, void 0, void 0, function* () {
     ws.on("message", (m) => __awaiter(void 0, void 0, void 0, function* () {
+        var _a;
         const data = JSON.parse(m.toString());
         if (data.type === "personal-msg") {
             const receiverId = data.receiverId;
@@ -135,7 +136,7 @@ wss.on("connection", (ws, req) => __awaiter(void 0, void 0, void 0, function* ()
         }
         if (data.type === "get-recent-chats") {
             const recentChats = yield (0, messages_1.sendRecentChats)(data.userId);
-            usersMap.get(data.userId).ws.send(JSON.stringify({
+            (_a = usersMap.get(data.userId)) === null || _a === void 0 ? void 0 : _a.ws.send(JSON.stringify({
                 type: "recent-chats",
                 chats: recentChats
             }));

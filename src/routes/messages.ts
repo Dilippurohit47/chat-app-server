@@ -1,5 +1,5 @@
 import { prisma } from "../utils/prisma";
-import express from "express";
+import express,{Request ,Response} from "express";
 export const saveMessage = async (
   senderId: string,
   receiverId: string,
@@ -13,46 +13,67 @@ export const saveMessage = async (
         content: content,
       },
     });
-    console.log("msg saved");
     return true;
   } catch (error) {
     console.log(error);
     return false;
   }
 };
-
+ 
 const app = express.Router();
 
-app.get("/get-messages", async (req, res) => {
+app.get("/get-messages", async (req: Request, res: Response) => {
   try {
-    const { senderId, receiverId } = req.query;
+    const { senderId, receiverId, cursor } = req.query;
+    const limit = parseInt(req.query.limit as string) || 20;
+    const cursorObj = cursor ? JSON.parse(cursor as string) : null;
 
     if (!senderId || !receiverId) {
-      return res
-        .status(400)
-        .json({ error: "senderId and receiverId are required" });
+      return res.status(400).json({ error: "senderId and receiverId are required" });
     }
 
-    // Fetch messages where:
-    // - The sender is senderId and receiver is receiverId
-    // - OR the sender is receiverId and receiver is senderId
     const messages = await prisma.messages.findMany({
+      take: limit + 1, // Fetch 1 extra to check for more
       where: {
         OR: [
-          { senderId, receiverId }, // Messages sent by senderId to receiverId
-          { senderId: receiverId, receiverId: senderId }, // Messages sent by receiverId to senderId
-        ],
+          // Case 1: Older messages in this chat
+          {
+            OR: [
+              { senderId: senderId as string, receiverId: receiverId as string },
+              { senderId: receiverId as string, receiverId: senderId as string },
+            ],
+            createdAt: { lt: cursorObj?.createdAt ? new Date(cursorObj.createdAt) : undefined }
+          },
+          // Case 2: Same timestamp but older ID (tiebreaker)
+          ...(cursorObj ? [{
+            OR: [
+              { senderId: senderId as string, receiverId: receiverId as string },
+              { senderId: receiverId as string, receiverId: senderId as string },
+            ],
+            createdAt: new Date(cursorObj.createdAt),
+            id: { lt: cursorObj.id }
+          }] : [])
+        ].filter(Boolean) // Remove empty conditions if no cursor
       },
-      orderBy: {
-        createdAt: "asc", // Order messages by creation time (oldest first)
-      },
-      include: {
-        sender: true, // Include sender details
-        receiver: true, // Include receiver details
-      },
+      orderBy: [
+        { createdAt: 'desc' },
+        { id: 'desc' },
+      ],
+      include: { sender: true, receiver: true }
     });
 
-    res.status(200).json(messages);
+    const hasMore = messages.length > limit;
+    const messagesToSend = hasMore ? messages.slice(0, limit) : messages;
+    const lastMessage = messagesToSend[messagesToSend.length - 1];
+
+    res.status(200).json({
+      messages: messagesToSend,
+      cursor: hasMore ? { 
+        createdAt: lastMessage.createdAt, 
+        id: lastMessage.id 
+      } : null,
+      hasMore
+    });
   } catch (error) {
     console.error("Error fetching messages:", error);
     res.status(500).json({ error: "Internal server error" });
@@ -172,7 +193,6 @@ if(chat?.unreadCount?.userId === userId){
     }
   })
 }
-console.log(chat)
 res.status(200).json({
   message: "Unread message count updated successfully",
 })
@@ -222,14 +242,12 @@ try {
       },
     });
   }
-  console.log("chat created")
 } catch (error) {
   console.log(error)
 }
 }
 
 export const sendRecentChats = async(userId:string) =>{
-  console.log("in recen chat send")
   try {
     if (!userId) {
      console.log("userId required")

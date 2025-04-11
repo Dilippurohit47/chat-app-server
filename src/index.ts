@@ -110,7 +110,7 @@ wss.on("connection", async (ws, req) => {
     }
     if(data.type === "get-recent-chats"){
       const recentChats  = await sendRecentChats(data.userId)
-     usersMap.get(data.userId).ws.send(JSON.stringify({
+     usersMap.get(data.userId)?.ws.send(JSON.stringify({
       type: "recent-chats",
       chats:recentChats
      })) 
