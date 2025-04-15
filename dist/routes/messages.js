@@ -42,10 +42,9 @@ app.get("/get-messages", (req, res) => __awaiter(void 0, void 0, void 0, functio
             return res.status(400).json({ error: "senderId and receiverId are required" });
         }
         const messages = yield prisma_1.prisma.messages.findMany({
-            take: limit + 1, // Fetch 1 extra to check for more
+            take: limit + 1,
             where: {
                 OR: [
-                    // Case 1: Older messages in this chat
                     {
                         OR: [
                             { senderId: senderId, receiverId: receiverId },

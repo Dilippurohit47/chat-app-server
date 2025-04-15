@@ -33,10 +33,9 @@ app.get("/get-messages", async (req: Request, res: Response) => {
     }
 
     const messages = await prisma.messages.findMany({
-      take: limit + 1, // Fetch 1 extra to check for more
+      take: limit + 1, 
       where: {
         OR: [
-          // Case 1: Older messages in this chat
           {
             OR: [
               { senderId: senderId as string, receiverId: receiverId as string },
