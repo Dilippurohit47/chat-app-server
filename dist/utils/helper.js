@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.sendToken = exports.JWT_PASSWORD = void 0;
+exports.formatZodError = exports.sendToken = exports.JWT_PASSWORD = void 0;
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 exports.JWT_PASSWORD = "123456";
 const sendToken = (res, user) => {
@@ -29,3 +29,10 @@ const sendToken = (res, user) => {
     }
 };
 exports.sendToken = sendToken;
+const formatZodError = (issues) => {
+    const error = issues.map((firstError) => {
+        return firstError.message;
+    });
+    return error;
+};
+exports.formatZodError = formatZodError;

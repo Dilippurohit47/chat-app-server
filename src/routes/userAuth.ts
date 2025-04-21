@@ -1,7 +1,8 @@
 import express, { Request, Response } from "express";
 import { prisma } from "../utils/prisma";
-import { JWT_PASSWORD, sendToken } from "../utils/helper";
+import { formatZodError, JWT_PASSWORD, sendToken } from "../utils/helper";
 import jwt from "jsonwebtoken";
+import { singnUpSchema } from "../types/zod";
 const app = express.Router();
 
 app.post("/sign-in", async (req, res) => {
@@ -53,13 +54,27 @@ app.post("/sign-up", async (req: Request, res: Response) => {
   try {
     const { name, email, password ,profileUrl} = req.body;
 
-    if (!name || !email || !password) {
-      res.status(404).json({
-        message: "Please fill all fields",
-      });
-      return;
-    }
+      const parsedData = singnUpSchema.safeParse(req.body)
 
+      if(!parsedData.success){
+      const dataError =   formatZodError(parsedData.error.issues)
+        res.status(403).json({
+          message: dataError[0]
+        })
+        return
+      }
+
+      const userExist = await prisma.user.findUnique({
+        where:{
+          email:email
+      }
+      })
+if(userExist){
+  res.status(404).json({
+    message:"User with this email already exist"
+  })
+  return
+}
     const user = await prisma.user.create({
       data: {
         name: name,

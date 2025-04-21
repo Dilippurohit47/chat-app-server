@@ -16,6 +16,7 @@ const express_1 = __importDefault(require("express"));
 const prisma_1 = require("../utils/prisma");
 const helper_1 = require("../utils/helper");
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
+const zod_1 = require("../types/zod");
 const app = express_1.default.Router();
 app.post("/sign-in", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
@@ -62,9 +63,22 @@ app.post("/sign-in", (req, res) => __awaiter(void 0, void 0, void 0, function* (
 app.post("/sign-up", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { name, email, password, profileUrl } = req.body;
-        if (!name || !email || !password) {
+        const parsedData = zod_1.singnUpSchema.safeParse(req.body);
+        if (!parsedData.success) {
+            const dataError = (0, helper_1.formatZodError)(parsedData.error.issues);
+            res.status(403).json({
+                message: dataError[0]
+            });
+            return;
+        }
+        const userExist = yield prisma_1.prisma.user.findUnique({
+            where: {
+                email: email
+            }
+        });
+        if (userExist) {
             res.status(404).json({
-                message: "Please fill all fields",
+                message: "User with this email already exist"
             });
             return;
         }

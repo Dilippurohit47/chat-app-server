@@ -29,3 +29,11 @@ export const sendToken = (res:Response, user:UserType) => {
     console.error("Error generating or sending token:", err);
   }
 };
+
+
+export const formatZodError = (issues) =>{
+  const error = issues.map((firstError) =>{
+    return firstError.message
+  })
+  return error
+}
