@@ -13,11 +13,6 @@ import cookieParser from "cookie-parser";
 import { saveMessage } from "./routes/messages";
 import awsRoute from "./aws";
 const app = express();
-// https://chat-app-client-tawny.vercel.app/
-// const corsOptions = {
-//   origin: /\.onrender\.com$/,
-//   methods: "GET,HEAD,PUT,PATCH,POST,DELETE",};
-// app.use(cors(corsOptions));
 
 app.use(express.json());
 app.use(cors({
@@ -45,6 +40,7 @@ wss.on("connection", async (ws, req) => {
       const receiverId = data.receiverId;
       if (usersMap.has(receiverId)) { 
         let { ws } = usersMap.get(receiverId);
+        console.log(data.message)
         ws.send(
           JSON.stringify({
             type: "personal-msg",

@@ -38,6 +38,7 @@ app.get("/get-messages", (req, res) => __awaiter(void 0, void 0, void 0, functio
         const { senderId, receiverId, cursor } = req.query;
         const limit = parseInt(req.query.limit) || 20;
         const cursorObj = cursor ? JSON.parse(cursor) : null;
+        console.log("logs", senderId, receiverId, cursor);
         if (!senderId || !receiverId) {
             return res.status(400).json({ error: "senderId and receiverId are required" });
         }

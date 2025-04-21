@@ -56,11 +56,6 @@ const cookie_parser_1 = __importDefault(require("cookie-parser"));
 const messages_2 = require("./routes/messages");
 const aws_1 = __importDefault(require("./aws"));
 const app = (0, express_1.default)();
-// https://chat-app-client-tawny.vercel.app/
-// const corsOptions = {
-//   origin: /\.onrender\.com$/,
-//   methods: "GET,HEAD,PUT,PATCH,POST,DELETE",};
-// app.use(cors(corsOptions));
 app.use(express_1.default.json());
 app.use((0, cors_1.default)({
     origin: ["http://localhost:5173", "https://chat-app-client-tawny.vercel.app"],
@@ -85,6 +80,7 @@ wss.on("connection", (ws, req) => __awaiter(void 0, void 0, void 0, function* ()
             const receiverId = data.receiverId;
             if (usersMap.has(receiverId)) {
                 let { ws } = usersMap.get(receiverId);
+                console.log(data.message);
                 ws.send(JSON.stringify({
                     type: "personal-msg",
                     message: data.message,
