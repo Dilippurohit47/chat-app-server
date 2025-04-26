@@ -55,6 +55,7 @@ const messages_1 = __importStar(require("./routes/messages"));
 const cookie_parser_1 = __importDefault(require("cookie-parser"));
 const messages_2 = require("./routes/messages");
 const aws_1 = __importDefault(require("./aws"));
+const group_1 = __importDefault(require("./routes/group"));
 const app = (0, express_1.default)();
 app.use(express_1.default.json());
 app.use((0, cors_1.default)({
@@ -68,6 +69,7 @@ const wss = new ws_1.WebSocketServer({ server });
 app.use("/user", userAuth_1.default);
 app.use("/chat", messages_1.default);
 app.use("/aws", aws_1.default);
+app.use("/group", group_1.default);
 const usersMap = new Map();
 app.get("/", (req, res) => {
     res.send("server is live");

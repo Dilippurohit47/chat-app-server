@@ -12,6 +12,7 @@ import Messages, {
 import cookieParser from "cookie-parser";
 import { saveMessage } from "./routes/messages";
 import awsRoute from "./aws";
+import groupRoute from "./routes/group"
 const app = express();
 
 app.use(express.json());
@@ -27,6 +28,7 @@ const wss = new WebSocketServer({ server });
 app.use("/user", userAuth);
 app.use("/chat", Messages);
 app.use("/aws", awsRoute);
+app.use("/group", groupRoute);
 
 const usersMap = new Map();
 
