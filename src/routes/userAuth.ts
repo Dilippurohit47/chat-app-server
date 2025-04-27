@@ -1,6 +1,6 @@
 import express, { Request, Response } from "express";
 import { prisma } from "../utils/prisma";
-import { formatZodError, JWT_PASSWORD, sendToken } from "../utils/helper";
+import { formatZodError, sendToken } from "../utils/helper";
 import jwt from "jsonwebtoken";
 import { singnUpSchema } from "../types/zod";
 const app = express.Router();
@@ -106,7 +106,7 @@ app.get("/get-user", async (req, res) => {
         message: "Please login first",
       });
     }
-    const decoded = jwt.verify(cookie, JWT_PASSWORD);
+    const decoded = jwt.verify(cookie,process.env.JWT_SECRET!);
 
     // ✅ Use `await` in an `async` function
     const user = await prisma.user.findUnique({

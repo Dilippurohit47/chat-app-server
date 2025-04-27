@@ -14,6 +14,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const prisma_1 = require("../utils/prisma");
+const middlewares_1 = require("../middlewares");
 const app = express_1.default.Router();
 app.post("/create-group", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
@@ -44,6 +45,12 @@ app.post("/create-group", (req, res) => __awaiter(void 0, void 0, void 0, functi
         res.status(500).json({
             message: "Internal server error",
         });
+    }
+}));
+app.get("/", middlewares_1.authorizeToken, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+    }
+    catch (error) {
     }
 }));
 exports.default = app;

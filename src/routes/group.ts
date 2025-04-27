@@ -1,5 +1,6 @@
 import express, { Request, Response } from "express";
 import { prisma } from "../utils/prisma";
+import { authorizeToken } from "../middlewares";
 
 const app = express.Router();
 
@@ -33,5 +34,13 @@ app.post("/create-group", async (req: Request, res: Response) => {
     });
   }
 });
+
+app.get("/", authorizeToken, async(req:Request,res:Response) =>{
+  try {
+    
+  } catch (error) {
+    
+  }
+})
 
 export default app;

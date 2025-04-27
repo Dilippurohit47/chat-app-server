@@ -111,7 +111,7 @@ app.get("/get-user", (req, res) => __awaiter(void 0, void 0, void 0, function* (
                 message: "Please login first",
             });
         }
-        const decoded = jsonwebtoken_1.default.verify(cookie, helper_1.JWT_PASSWORD);
+        const decoded = jsonwebtoken_1.default.verify(cookie, process.env.JWT_SECRET);
         // ✅ Use `await` in an `async` function
         const user = yield prisma_1.prisma.user.findUnique({
             where: {
