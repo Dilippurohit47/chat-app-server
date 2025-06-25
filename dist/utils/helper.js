@@ -5,11 +5,16 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.formatZodError = exports.sendToken = exports.JWT_PASSWORD = void 0;
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
-exports.JWT_PASSWORD = "";
+const dotenv_1 = __importDefault(require("dotenv"));
+dotenv_1.default.config();
+exports.JWT_PASSWORD = process.env.JWT_SECRET;
 const sendToken = (res, user) => {
     if (!res || !user) {
         console.error("response or user needed");
         return;
+    }
+    if (!exports.JWT_PASSWORD) {
+        throw new Error("Jwt secret is required");
     }
     const cookieName = "chat-token";
     try {

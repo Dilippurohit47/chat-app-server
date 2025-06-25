@@ -19,7 +19,8 @@ const app = express_1.default.Router();
 app.post("/create-group", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { name, members } = req.body;
-        if (!name || members.length < 0) {
+        console.log("here");
+        if (!name || members.length <= 0) {
             res.status(403).json({
                 message: "Missing elements required"
             });
@@ -35,7 +36,6 @@ app.post("/create-group", (req, res) => __awaiter(void 0, void 0, void 0, functi
                 },
             },
         });
-        console.log(group);
         res.status(200).json({
             message: "Group Created successfully",
         });
@@ -49,6 +49,26 @@ app.post("/create-group", (req, res) => __awaiter(void 0, void 0, void 0, functi
 }));
 app.get("/", middlewares_1.authorizeToken, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
+        const userId = req.user.id;
+        const groups = yield prisma_1.prisma.group.findMany({
+            where: {
+                members: {
+                    some: {
+                        userId: userId,
+                    },
+                },
+            },
+            include: {
+                members: {
+                    include: {
+                        user: true
+                    }
+                }
+            }
+        });
+        res.status(200).json({
+            groups: groups
+        });
     }
     catch (error) {
     }

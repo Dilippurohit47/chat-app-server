@@ -59,9 +59,12 @@ const group_1 = __importDefault(require("./routes/group"));
 const app = (0, express_1.default)();
 app.use(express_1.default.json());
 app.use((0, cors_1.default)({
-    origin: ["http://localhost:5173", "https://chat-app-client-tawny.vercel.app"],
+    origin: [
+        "http://localhost:5173",
+        "https://chat-app-client-tawny.vercel.app",
+    ],
     credentials: true,
-    methods: ["GET", "POST", "PUT", "OPTIONS"]
+    methods: ["GET", "POST", "PUT", "OPTIONS"],
 }));
 app.use((0, cookie_parser_1.default)());
 const server = http_1.default.createServer(app);
@@ -82,7 +85,6 @@ wss.on("connection", (ws, req) => __awaiter(void 0, void 0, void 0, function* ()
             const receiverId = data.receiverId;
             if (usersMap.has(receiverId)) {
                 let { ws } = usersMap.get(receiverId);
-                console.log(data.message);
                 ws.send(JSON.stringify({
                     type: "personal-msg",
                     message: data.message,
@@ -136,8 +138,37 @@ wss.on("connection", (ws, req) => __awaiter(void 0, void 0, void 0, function* ()
             const recentChats = yield (0, messages_1.sendRecentChats)(data.userId);
             (_a = usersMap.get(data.userId)) === null || _a === void 0 ? void 0 : _a.ws.send(JSON.stringify({
                 type: "recent-chats",
-                chats: recentChats
+                chats: recentChats,
             }));
+        }
+        if (data.type === "group-message") {
+            const groupId = data.groupId;
+            const groupMembers = yield prisma_1.prisma.group.findFirst({
+                where: {
+                    id: groupId,
+                },
+                include: {
+                    members: {
+                        select: {
+                            userId: true,
+                        },
+                    },
+                },
+            });
+            groupMembers === null || groupMembers === void 0 ? void 0 : groupMembers.members.map((user) => {
+                var _a;
+                if (user.userId === data.message.senderId) {
+                    return;
+                }
+                const ws = (_a = usersMap.get(user.userId)) === null || _a === void 0 ? void 0 : _a.ws;
+                if (ws) {
+                    ws === null || ws === void 0 ? void 0 : ws.send(JSON.stringify({
+                        type: "group-message",
+                        content: data.message.content,
+                        senderId: data.message.senderId
+                    }));
+                }
+            });
         }
     }));
     ws.on("close", () => {

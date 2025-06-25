@@ -1,5 +1,8 @@
 import JWT from "jsonwebtoken"
-export const authorizeToken =(req,res,next) =>{
+import { Response,Request,NextFunction } from "express"
+import dotenv from "dotenv"
+dotenv.config()
+export const authorizeToken =(req:Request,res:Response,next:NextFunction) =>{
 try {
     const token = req.cookies["chat-token"]
     if(!token){
@@ -7,8 +10,8 @@ try {
             message:"Login First"
         })
     }
-   const user =  JWT.verify(token , process.env.JWT_SECRET!)
-console.log(user)
+
+   const user =  JWT.verify(token , process.env.JWT_SECRET!) 
    req.user = user
    next()
 } catch (error) {
@@ -17,5 +20,5 @@ console.log(user)
         message:"Invalid Token"
     })
     return
-}  
+}   
 }

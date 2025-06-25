@@ -1,17 +1,21 @@
 import JWT from "jsonwebtoken";
 import { Response } from "express"
 import { UserType } from "../types";
-export const JWT_PASSWORD = "";
+import dotenv from "dotenv"
+dotenv.config()
+export const JWT_PASSWORD = process.env.JWT_SECRET;
 
 
 
 export const sendToken = (res:Response, user:UserType) => {
-
   if (!res || !user) {
     console.error("response or user needed");
     return; 
-  }
-
+  } 
+if(!JWT_PASSWORD){
+  throw new Error("Jwt secret is required");
+  
+}
   const cookieName = "chat-token";
   try {
     const token = JWT.sign({ id: user.id }, JWT_PASSWORD, {

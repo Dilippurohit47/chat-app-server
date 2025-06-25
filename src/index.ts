@@ -3,24 +3,29 @@ import { WebSocketServer } from "ws";
 import http from "http";
 import cors from "cors";
 import { prisma } from "./utils/prisma";
-
 import userAuth from "./routes/userAuth";
 import Messages, {
-  sendRecentChats, 
+  sendRecentChats,
   upsertRecentChats,
 } from "./routes/messages";
 import cookieParser from "cookie-parser";
 import { saveMessage } from "./routes/messages";
 import awsRoute from "./aws";
-import groupRoute from "./routes/group"
+import groupRoute from "./routes/group";
+import { ObjectVersionStorageClass } from "@aws-sdk/client-s3";
 const app = express();
 
 app.use(express.json());
-app.use(cors({
-  origin: ["http://localhost:5173","https://chat-app-client-tawny.vercel.app"],
-  credentials:true,
-  methods: ["GET", "POST", "PUT", "OPTIONS"]
-}))
+app.use(
+  cors({
+    origin: [
+      "http://localhost:5173",
+      "https://chat-app-client-tawny.vercel.app",
+    ],
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "OPTIONS"],
+  })
+);
 app.use(cookieParser());
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
@@ -32,17 +37,16 @@ app.use("/group", groupRoute);
 
 const usersMap = new Map();
 
-app.get("/",(req,res) =>{
+app.get("/", (req, res) => {
   res.send("server is live");
-})
+});
 wss.on("connection", async (ws, req) => {
   ws.on("message", async (m) => {
     const data = JSON.parse(m.toString());
-    if (data.type === "personal-msg") {    
+    if (data.type === "personal-msg") {
       const receiverId = data.receiverId;
-      if (usersMap.has(receiverId)) { 
+      if (usersMap.has(receiverId)) {
         let { ws } = usersMap.get(receiverId);
-        console.log(data.message)
         ws.send(
           JSON.stringify({
             type: "personal-msg",
@@ -53,11 +57,11 @@ wss.on("connection", async (ws, req) => {
         );
       }
       if (data.senderId || receiverId || data.message) {
-       await saveMessage(data.senderId, receiverId, data.message);
-      await upsertRecentChats(data.senderId, receiverId, data.message);
-        const senderRecentChats = await  sendRecentChats(data.senderId);
+        await saveMessage(data.senderId, receiverId, data.message);
+        await upsertRecentChats(data.senderId, receiverId, data.message);
+        const senderRecentChats = await sendRecentChats(data.senderId);
         const receiverRecentChats = await sendRecentChats(data.receiverId);
-    
+
         if (usersMap.has(data.senderId)) {
           let senderWs = usersMap.get(data.senderId).ws;
           if (senderWs && senderWs.readyState === 1) {
@@ -67,9 +71,9 @@ wss.on("connection", async (ws, req) => {
                 chats: senderRecentChats,
               })
             );
-          } 
+          }
         }
-  
+
         if (usersMap.has(receiverId)) {
           let receiverWs = usersMap.get(receiverId).ws;
           if (receiverWs && receiverWs.readyState === 1) {
@@ -106,12 +110,44 @@ wss.on("connection", async (ws, req) => {
         });
       }
     }
-    if(data.type === "get-recent-chats"){
-      const recentChats  = await sendRecentChats(data.userId)
-     usersMap.get(data.userId)?.ws.send(JSON.stringify({
-      type: "recent-chats",
-      chats:recentChats
-     })) 
+    if (data.type === "get-recent-chats") {
+      const recentChats = await sendRecentChats(data.userId);
+      usersMap.get(data.userId)?.ws.send(
+        JSON.stringify({
+          type: "recent-chats",
+          chats: recentChats,
+        })
+      );
+    }
+    if (data.type === "group-message") {
+      const groupId = data.groupId;
+      const groupMembers = await prisma.group.findFirst({
+        where: {
+          id: groupId,
+        },
+        include: {
+          members: {
+            select: {
+              userId: true,
+            },
+          },
+        },
+      });
+      groupMembers?.members.map((user) => {
+        if(user.userId === data.message.senderId){
+          return
+        }
+        const ws = usersMap.get(user.userId)?.ws;
+        if (ws) {
+          ws?.send(
+            JSON.stringify({
+              type: "group-message",
+              content: data.message.content,
+              senderId:data.message.senderId
+            })
+          );
+        }
+      });
     }
   });
 

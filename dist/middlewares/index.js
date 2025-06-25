@@ -5,6 +5,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.authorizeToken = void 0;
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
+const dotenv_1 = __importDefault(require("dotenv"));
+dotenv_1.default.config();
 const authorizeToken = (req, res, next) => {
     try {
         const token = req.cookies["chat-token"];
@@ -14,7 +16,6 @@ const authorizeToken = (req, res, next) => {
             });
         }
         const user = jsonwebtoken_1.default.verify(token, process.env.JWT_SECRET);
-        console.log(user);
         req.user = user;
         next();
     }
