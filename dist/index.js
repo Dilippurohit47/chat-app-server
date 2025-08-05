@@ -52,6 +52,7 @@ const cors_1 = __importDefault(require("cors"));
 const prisma_1 = require("./utils/prisma");
 const userAuth_1 = __importDefault(require("./routes/userAuth"));
 const messages_1 = __importStar(require("./routes/messages"));
+const chat_1 = __importDefault(require("./routes/chat"));
 const cookie_parser_1 = __importDefault(require("cookie-parser"));
 const messages_2 = require("./routes/messages");
 const aws_1 = __importDefault(require("./aws"));
@@ -64,7 +65,7 @@ app.use((0, cors_1.default)({
         "https://chat-app-client-tawny.vercel.app",
     ],
     credentials: true,
-    methods: ["GET", "POST", "PUT", "OPTIONS"],
+    methods: ["GET", "POST", "PUT", "OPTIONS", "DELETE"],
 }));
 app.use((0, cookie_parser_1.default)());
 const server = http_1.default.createServer(app);
@@ -73,6 +74,7 @@ app.use("/user", userAuth_1.default);
 app.use("/chat", messages_1.default);
 app.use("/aws", aws_1.default);
 app.use("/group", group_1.default);
+app.use("/chat-setting", chat_1.default);
 const usersMap = new Map();
 app.get("/", (req, res) => {
     res.send("server is live");
@@ -93,8 +95,8 @@ wss.on("connection", (ws, req) => __awaiter(void 0, void 0, void 0, function* ()
                 }));
             }
             if (data.senderId || receiverId || data.message) {
-                yield (0, messages_2.saveMessage)(data.senderId, receiverId, data.message);
-                yield (0, messages_1.upsertRecentChats)(data.senderId, receiverId, data.message);
+                yield (0, messages_1.upsertRecentChats)(data.senderId, receiverId, data.message, data.chatId);
+                yield (0, messages_2.saveMessage)(data.senderId, receiverId, data.message, data.chatId);
                 const senderRecentChats = yield (0, messages_1.sendRecentChats)(data.senderId);
                 const receiverRecentChats = yield (0, messages_1.sendRecentChats)(data.receiverId);
                 if (usersMap.has(data.senderId)) {

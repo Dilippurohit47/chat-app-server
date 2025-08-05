@@ -7,7 +7,6 @@ const app = express.Router();
 app.post("/create-group",async (req: Request, res: Response) => {
   try {
     const { name, members } = req.body;
-    console.log("here")
     if(!name || members.length <= 0){
         res.status(403).json({
             message:"Missing elements required"
@@ -58,8 +57,46 @@ res.status(200).json({
   groups:groups
 })
   } catch (error) {
-    
+    res.status(500).json({
+      message:"Internal server error"
+    })
+    return
   }
 })
+
+app.post("/add-new-members",async(req,res)=>{
+  try {
+    const {newMembers} = req.body
+    const {groupId} = req.query
+    if(!groupId){
+      res.status(403).json({
+        message:"Group id is absent!"
+      })
+    }
+    const  data = await prisma.group.update({
+      where:{
+        id:groupId
+      },
+      data:{
+        members:{
+         create:newMembers.map((id) =>({
+          user:{connect:{id:id}}
+         }))
+        }
+      }
+    })
+res.status(200).json({
+  message:"Group updated successfully" 
+})
+  } catch (error) {
+    console.log(error)
+    res.status(500).json({
+      message:"Internal server error"
+    })
+    return
+  }
+})
+
+app.delete("/delete-group")
 
 export default app;

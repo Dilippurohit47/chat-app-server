@@ -19,7 +19,6 @@ const app = express_1.default.Router();
 app.post("/create-group", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { name, members } = req.body;
-        console.log("here");
         if (!name || members.length <= 0) {
             res.status(403).json({
                 message: "Missing elements required"
@@ -71,6 +70,44 @@ app.get("/", middlewares_1.authorizeToken, (req, res) => __awaiter(void 0, void 
         });
     }
     catch (error) {
+        res.status(500).json({
+            message: "Internal server error"
+        });
+        return;
     }
 }));
+app.post("/add-new-members", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { newMembers } = req.body;
+        const { groupId } = req.query;
+        if (!groupId) {
+            res.status(403).json({
+                message: "Group id is absent!"
+            });
+        }
+        const data = yield prisma_1.prisma.group.update({
+            where: {
+                id: groupId
+            },
+            data: {
+                members: {
+                    create: newMembers.map((id) => ({
+                        user: { connect: { id: id } }
+                    }))
+                }
+            }
+        });
+        res.status(200).json({
+            message: "Group updated successfully"
+        });
+    }
+    catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Internal server error"
+        });
+        return;
+    }
+}));
+app.delete("/delete-group");
 exports.default = app;

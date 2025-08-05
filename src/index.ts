@@ -8,11 +8,11 @@ import Messages, {
   sendRecentChats,
   upsertRecentChats,
 } from "./routes/messages";
+import Chat from "./routes/chat"
 import cookieParser from "cookie-parser";
 import { saveMessage } from "./routes/messages";
 import awsRoute from "./aws";
 import groupRoute from "./routes/group";
-import { ObjectVersionStorageClass } from "@aws-sdk/client-s3";
 const app = express();
 
 app.use(express.json());
@@ -23,7 +23,7 @@ app.use(
       "https://chat-app-client-tawny.vercel.app",
     ],
     credentials: true,
-    methods: ["GET", "POST", "PUT", "OPTIONS"],
+    methods: ["GET", "POST", "PUT", "OPTIONS","DELETE"],
   })
 );
 app.use(cookieParser());
@@ -34,7 +34,7 @@ app.use("/user", userAuth);
 app.use("/chat", Messages);
 app.use("/aws", awsRoute);
 app.use("/group", groupRoute);
-
+app.use("/chat-setting", Chat);
 const usersMap = new Map();
 
 app.get("/", (req, res) => {
@@ -57,8 +57,8 @@ wss.on("connection", async (ws, req) => {
         );
       }
       if (data.senderId || receiverId || data.message) {
-        await saveMessage(data.senderId, receiverId, data.message);
-        await upsertRecentChats(data.senderId, receiverId, data.message);
+        await upsertRecentChats(data.senderId, receiverId, data.message,data.chatId);
+        await saveMessage(data.senderId, receiverId, data.message,data.chatId);
         const senderRecentChats = await sendRecentChats(data.senderId);
         const receiverRecentChats = await sendRecentChats(data.receiverId);
 

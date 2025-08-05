@@ -21,9 +21,9 @@ model User {
   profileUrl String?
   chats1      Chat[]  @relation("User1")
   chats2      Chat[]  @relation("User2")
-
-
-   groupMemberships GroupMember[]   
+  deletedMessage DeletedMessage[]
+  deletedChat DeletedChat[]
+  groupMemberships GroupMember[]   
   groupMessages    GroupMessage[]  
 }
 model Messages {
@@ -34,6 +34,9 @@ model Messages {
   receiverId  String
   sender      User     @relation("SentMessages", fields: [senderId], references: [id])  
   receiver    User     @relation("ReceivedMessages", fields: [receiverId], references: [id])  
+  chatId      String
+  chat      Chat     @relation(fields: [chatId], references: [id])
+  deletedBy DeletedMessage[]
 } 
 
 model Chat {
@@ -45,7 +48,36 @@ model Chat {
   unreadCount Json? 
   user1 User @relation(name: "User1", fields: [userId1], references: [id])
   user2 User @relation(name: "User2", fields: [userId2], references: [id])
+  message Messages[]
+  deleteBy DeletedChat[]
 }
+
+
+model DeletedChat {
+  id String @id @default(uuid())
+  userId String
+  chatId String
+  user User @relation(fields: [userId],references: [id])
+  chat Chat @relation(fields: [chatId],references: [id])
+}
+model DeletedMessage {
+  id        String   @id @default(uuid())
+  userId    String
+  messageId String
+
+  user      User     @relation(fields: [userId], references: [id])
+  message   Messages  @relation(fields: [messageId], references: [id])
+
+  @@unique([userId, messageId])
+}
+
+
+
+
+
+
+
+
 
 model Group {
   id        String   @id @default(uuid())
