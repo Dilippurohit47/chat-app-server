@@ -42,22 +42,21 @@ app.get("/", (req, res) => {
 });
 wss.on("connection", async (ws, req) => {
   ws.on("message", async (m) => {
-    const data = JSON.parse(m.toString());
+    const data = JSON.parse(m.toString()); 
     if (data.type === "personal-msg") {
       const receiverId = data.receiverId;
       if (usersMap.has(receiverId)) {
         let { ws } = usersMap.get(receiverId);
         ws.send(
-          JSON.stringify({
+          JSON.stringify({    
             type: "personal-msg",
-            message: data.message,
+            message: data.message,    
             receiverId: receiverId,
-            senderId: data.senderId,
+            senderId: data.senderId, 
           })
         );
       }
       if (data.senderId || receiverId || data.message) {
-        await upsertRecentChats(data.senderId, receiverId, data.message,data.chatId);
         await saveMessage(data.senderId, receiverId, data.message,data.chatId);
         const senderRecentChats = await sendRecentChats(data.senderId);
         const receiverRecentChats = await sendRecentChats(data.receiverId);
@@ -69,10 +68,10 @@ wss.on("connection", async (ws, req) => {
               JSON.stringify({
                 type: "recent-chats",
                 chats: senderRecentChats,
-              })
+              }) 
             );
           }
-        }
+        } 
 
         if (usersMap.has(receiverId)) {
           let receiverWs = usersMap.get(receiverId).ws;
@@ -87,7 +86,7 @@ wss.on("connection", async (ws, req) => {
             console.log(`❌ WebSocket not open for receiver (${receiverId})`);
           }
         }
-      }
+      } 
     }
     if (data.type === "user-info") {
       const user = await prisma.user.findUnique({
@@ -134,7 +133,7 @@ wss.on("connection", async (ws, req) => {
         },
       });
       groupMembers?.members.map((user) => {
-        if(user.userId === data.message.senderId){
+        if(user.userId === data.message.senderId){ 
           return
         }
         const ws = usersMap.get(user.userId)?.ws;
@@ -148,6 +147,23 @@ wss.on("connection", async (ws, req) => {
           );
         }
       });
+    }
+    if(data.type === "send-groups"){
+      console.log("send groups")
+      const userId = data.userId
+      const groups = await prisma.group.findMany({
+        where:{
+          members:{
+            every:{
+              userId:userId
+            }
+          }
+        }
+      })
+      ws.send(JSON.stringify({
+        type:"get-groups-ws",
+        groups:groups
+      }))
     }
   });
 

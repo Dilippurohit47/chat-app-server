@@ -15,6 +15,8 @@ import express, { Request, Response } from "express";
       },
     });
 
+
+    console.log(chat)
     if (chat) {
       await prisma.chat.update({
         where: {
@@ -266,7 +268,6 @@ app.get("/get-recent-chats", async (req, res) => {
 });
 
 app.put("/update-unreadmessage-count", async (req, res) => {
-  return;
   try {
     const { userId, chatId } = req.body;
     const chat = await prisma.chat.findUnique({

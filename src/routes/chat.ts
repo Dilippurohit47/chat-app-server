@@ -10,8 +10,6 @@ app.delete("/clear-chat", async (req: Request, res: Response) => {
       where: { chatId: chatId },
       select: { id: true },
     });
-console.log(messages)
-console.log(messages.length)
     await prisma.deletedMessage.createMany({
       data: messages.map((msg) => ({
         userId: userId,
@@ -33,8 +31,8 @@ console.log(messages.length)
 app.delete("/delete-chat", async (req: Request, res: Response) => {
   try {
     const { userId, chatId } = req.body;
-  const chat =    await prisma.deletedChat.create({
-      data: {
+  const chat =    await prisma.deletedChat.create({   
+      data: { 
         chatId: chatId,
         userId: userId,
       },

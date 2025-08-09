@@ -26,6 +26,7 @@ const upsertRecentChats = (userId1, userId2, lastMessage) => __awaiter(void 0, v
                 ],
             },
         });
+        console.log(chat);
         if (chat) {
             yield prisma_1.prisma.chat.update({
                 where: {
@@ -262,7 +263,6 @@ app.get("/get-recent-chats", (req, res) => __awaiter(void 0, void 0, void 0, fun
 }));
 app.put("/update-unreadmessage-count", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
-    return;
     try {
         const { userId, chatId } = req.body;
         const chat = yield prisma_1.prisma.chat.findUnique({

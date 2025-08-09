@@ -95,7 +95,6 @@ wss.on("connection", (ws, req) => __awaiter(void 0, void 0, void 0, function* ()
                 }));
             }
             if (data.senderId || receiverId || data.message) {
-                yield (0, messages_1.upsertRecentChats)(data.senderId, receiverId, data.message, data.chatId);
                 yield (0, messages_2.saveMessage)(data.senderId, receiverId, data.message, data.chatId);
                 const senderRecentChats = yield (0, messages_1.sendRecentChats)(data.senderId);
                 const receiverRecentChats = yield (0, messages_1.sendRecentChats)(data.receiverId);
@@ -171,6 +170,23 @@ wss.on("connection", (ws, req) => __awaiter(void 0, void 0, void 0, function* ()
                     }));
                 }
             });
+        }
+        if (data.type === "send-groups") {
+            console.log("send groups");
+            const userId = data.userId;
+            const groups = yield prisma_1.prisma.group.findMany({
+                where: {
+                    members: {
+                        every: {
+                            userId: userId
+                        }
+                    }
+                }
+            });
+            ws.send(JSON.stringify({
+                type: "get-groups-ws",
+                groups: groups
+            }));
         }
     }));
     ws.on("close", () => {

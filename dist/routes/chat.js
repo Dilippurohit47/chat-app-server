@@ -22,8 +22,6 @@ app.delete("/clear-chat", (req, res) => __awaiter(void 0, void 0, void 0, functi
             where: { chatId: chatId },
             select: { id: true },
         });
-        console.log(messages);
-        console.log(messages.length);
         yield prisma_1.prisma.deletedMessage.createMany({
             data: messages.map((msg) => ({
                 userId: userId,

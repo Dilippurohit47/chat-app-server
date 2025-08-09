@@ -21,7 +21,7 @@ app.post("/create-group", (req, res) => __awaiter(void 0, void 0, void 0, functi
         const { name, members } = req.body;
         if (!name || members.length <= 0) {
             res.status(403).json({
-                message: "Missing elements required"
+                message: "Missing elements required",
             });
             return;
         }
@@ -49,6 +49,7 @@ app.post("/create-group", (req, res) => __awaiter(void 0, void 0, void 0, functi
 app.get("/", middlewares_1.authorizeToken, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const userId = req.user.id;
+        console.log(userId);
         const groups = yield prisma_1.prisma.group.findMany({
             where: {
                 members: {
@@ -60,18 +61,19 @@ app.get("/", middlewares_1.authorizeToken, (req, res) => __awaiter(void 0, void 
             include: {
                 members: {
                     include: {
-                        user: true
-                    }
-                }
-            }
+                        user: true,
+                    },
+                },
+            },
         });
+        console.log(groups);
         res.status(200).json({
-            groups: groups
+            groups: groups,
         });
     }
     catch (error) {
         res.status(500).json({
-            message: "Internal server error"
+            message: "Internal server error",
         });
         return;
     }
@@ -82,32 +84,53 @@ app.post("/add-new-members", (req, res) => __awaiter(void 0, void 0, void 0, fun
         const { groupId } = req.query;
         if (!groupId) {
             res.status(403).json({
-                message: "Group id is absent!"
+                message: "Group id is absent!",
             });
         }
         const data = yield prisma_1.prisma.group.update({
             where: {
-                id: groupId
+                id: groupId,
             },
             data: {
                 members: {
                     create: newMembers.map((id) => ({
-                        user: { connect: { id: id } }
-                    }))
-                }
-            }
+                        user: { connect: { id: id } },
+                    })),
+                },
+            },
         });
         res.status(200).json({
-            message: "Group updated successfully"
+            message: "Group updated successfully",
         });
     }
     catch (error) {
         console.log(error);
         res.status(500).json({
-            message: "Internal server error"
+            message: "Internal server error",
         });
         return;
     }
 }));
-app.delete("/delete-group");
+app.delete("/delete-group/:id", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { id } = req.params;
+        yield prisma_1.prisma.$transaction((tx) => __awaiter(void 0, void 0, void 0, function* () {
+            yield tx.groupMember.deleteMany({
+                where: {
+                    groupId: id,
+                },
+            });
+            yield tx.group.delete({
+                where: {
+                    id: id,
+                },
+            });
+        }));
+        res.status(200).json({ success: true, message: "Group deleted successfully" });
+    }
+    catch (error) {
+        res.send(500);
+        console.log(error);
+    }
+}));
 exports.default = app;
