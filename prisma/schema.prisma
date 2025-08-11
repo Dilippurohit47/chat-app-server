@@ -25,6 +25,7 @@ model User {
   deletedChat DeletedChat[]
   groupMemberships GroupMember[]   
   groupMessages    GroupMessage[]  
+  deletedGroup DeletedGroup[]
 }
 model Messages {
   id          String   @id @default(uuid())
@@ -60,6 +61,9 @@ model DeletedChat {
   user User @relation(fields: [userId],references: [id])
   chat Chat @relation(fields: [chatId],references: [id])
 }
+
+
+
 model DeletedMessage {
   id        String   @id @default(uuid())
   userId    String
@@ -85,6 +89,15 @@ model Group {
   members   GroupMember[]  
   messages  GroupMessage[]
   createdAt DateTime @default(now())
+  deletedby  DeletedGroup[]
+}
+
+model DeletedGroup {
+  id String @id @default(uuid())
+  userId String
+  groupId String
+  user User @relation(fields: [userId],references: [id])
+  group Group @relation(fields: [groupId],references: [id])
 }
 
 model GroupMember {

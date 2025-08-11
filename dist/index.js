@@ -181,6 +181,11 @@ wss.on("connection", (ws, req) => __awaiter(void 0, void 0, void 0, function* ()
                         some: {
                             userId: userId
                         }
+                    },
+                    deletedby: {
+                        none: {
+                            userId: userId
+                        }
                     }
                 },
                 include: {
@@ -191,10 +196,17 @@ wss.on("connection", (ws, req) => __awaiter(void 0, void 0, void 0, function* ()
                     }
                 }
             });
-            ws.send(JSON.stringify({
-                type: "get-groups-ws",
-                groups: groups
-            }));
+            const userIds = groups.map((group) => { var _a; return (_a = group.members) === null || _a === void 0 ? void 0 : _a.map((user) => user.userId); }).flatMap((id) => id);
+            console.log("userID", userIds);
+            userIds.map((id) => {
+                if (usersMap.has(id)) {
+                    const ws = usersMap.get(id).ws;
+                    ws.send(JSON.stringify({
+                        type: "get-groups-ws",
+                        groups: groups
+                    }));
+                }
+            });
         }
     }));
     ws.on("close", () => {

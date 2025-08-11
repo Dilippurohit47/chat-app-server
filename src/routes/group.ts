@@ -44,6 +44,11 @@ app.get("/", authorizeToken, async (req: Request, res: Response) => {
             userId: userId,
           },
         },
+        deletedby:{
+          none:{
+            userId:userId
+          }
+        }
       },
       include: {
         members: {
@@ -52,6 +57,7 @@ app.get("/", authorizeToken, async (req: Request, res: Response) => {
           },
         },
       },
+      
     });
     res.status(200).json({
       groups: groups,
@@ -97,23 +103,23 @@ app.post("/add-new-members", async (req, res) => {
   }
 });
 
-app.delete("/delete-group/:id", async (req, res) => {
+app.delete("/delete-group/:groupId/:userId", async (req, res) => {
   try {
-    const { id } = req.params;
+    const { groupId  ,userId} = req.params;
+    if(!groupId || !userId){
+      console.log("user id and group id required for deleting group")
+      return res.status(403).json({
+        message:"Insufficent credentials"
+      })
+    }
+   
+    await prisma.deletedGroup.create({
+      data:{
+        userId:userId,
+        groupId:groupId
+      }
+    })
 
-    await prisma.$transaction(async (tx) => {
-      await tx.groupMember.deleteMany({
-        where: {
-          groupId: id,
-        },
-      });
-
-      await tx.group.delete({
-        where: {
-          id: id,
-        },
-      });
-    });
 res.status(200).json({ success: true, message: "Group deleted successfully" });
   } catch (error) {
     res.send(500);

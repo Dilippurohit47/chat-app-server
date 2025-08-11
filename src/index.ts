@@ -160,6 +160,12 @@ wss.on("connection", async (ws, req) => {
             some:{ 
               userId:userId
             }
+          },
+          deletedby:{
+            none:{ 
+              userId:userId
+            }
+
           }
         },
         include:{
@@ -170,10 +176,19 @@ wss.on("connection", async (ws, req) => {
           }
         }
       })
-      ws.send(JSON.stringify({
+      const userIds = groups.map((group) =>group.members?.map((user) =>user.userId)).flatMap((id) =>id)
+console.log("userID",userIds)
+      userIds.map((id) =>{
+        if(usersMap.has(id)){
+          const ws = usersMap.get(id).ws
+                ws.send(JSON.stringify({
         type:"get-groups-ws",
         groups:groups
       }))
+        }
+      })
+
+
     }
   });
 
