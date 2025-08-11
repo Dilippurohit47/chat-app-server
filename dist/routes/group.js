@@ -49,7 +49,6 @@ app.post("/create-group", (req, res) => __awaiter(void 0, void 0, void 0, functi
 app.get("/", middlewares_1.authorizeToken, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const userId = req.user.id;
-        console.log(userId);
         const groups = yield prisma_1.prisma.group.findMany({
             where: {
                 members: {
@@ -66,7 +65,6 @@ app.get("/", middlewares_1.authorizeToken, (req, res) => __awaiter(void 0, void 
                 },
             },
         });
-        console.log(groups);
         res.status(200).json({
             groups: groups,
         });

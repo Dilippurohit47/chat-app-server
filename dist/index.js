@@ -121,12 +121,14 @@ wss.on("connection", (ws, req) => __awaiter(void 0, void 0, void 0, function* ()
                 }
             }
         }
+        console.log(data);
         if (data.type === "user-info") {
             const user = yield prisma_1.prisma.user.findUnique({
                 where: {
                     id: data.userId,
                 },
             });
+            console.log("user ", user);
             if (user) {
                 usersMap.set(user.id, { ws, userInfo: user });
                 const onlineUsers = Array.from(usersMap.entries()).map(([userId, userObj]) => (Object.assign({ userId }, userObj.userInfo)));
@@ -172,13 +174,19 @@ wss.on("connection", (ws, req) => __awaiter(void 0, void 0, void 0, function* ()
             });
         }
         if (data.type === "send-groups") {
-            console.log("send groups");
             const userId = data.userId;
             const groups = yield prisma_1.prisma.group.findMany({
                 where: {
                     members: {
-                        every: {
+                        some: {
                             userId: userId
+                        }
+                    }
+                },
+                include: {
+                    members: {
+                        include: {
+                            user: true
                         }
                     }
                 }
