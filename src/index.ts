@@ -45,6 +45,7 @@ wss.on("connection", async (ws, req) => {
     const data = JSON.parse(m.toString()); 
     if (data.type === "personal-msg") {
       const receiverId = data.receiverId;
+
       if (usersMap.has(receiverId)) {
         let { ws } = usersMap.get(receiverId);
         ws.send(
@@ -88,12 +89,14 @@ wss.on("connection", async (ws, req) => {
         }
       } 
     }
+    console.log(data)
     if (data.type === "user-info") {
       const user = await prisma.user.findUnique({
         where: {
           id: data.userId,
         },
       });
+      console.log("user ",user)
       if (user) {
         usersMap.set(user.id, { ws, userInfo: user });
         const onlineUsers = Array.from(usersMap.entries()).map(
@@ -149,13 +152,20 @@ wss.on("connection", async (ws, req) => {
       });
     }
     if(data.type === "send-groups"){
-      console.log("send groups")
       const userId = data.userId
+
       const groups = await prisma.group.findMany({
         where:{
           members:{
-            every:{
+            some:{ 
               userId:userId
+            }
+          }
+        },
+        include:{
+          members:{
+            include:{
+              user:true
             }
           }
         }

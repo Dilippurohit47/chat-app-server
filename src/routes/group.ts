@@ -37,7 +37,6 @@ app.post("/create-group", async (req: Request, res: Response) => {
 app.get("/", authorizeToken, async (req: Request, res: Response) => {
   try {
     const userId = req.user.id;
-    console.log(userId);
     const groups = await prisma.group.findMany({
       where: {
         members: {
@@ -54,7 +53,6 @@ app.get("/", authorizeToken, async (req: Request, res: Response) => {
         },
       },
     });
-    console.log(groups);
     res.status(200).json({
       groups: groups,
     });
