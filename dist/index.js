@@ -57,6 +57,8 @@ const cookie_parser_1 = __importDefault(require("cookie-parser"));
 const messages_2 = require("./routes/messages");
 const aws_1 = __importDefault(require("./aws"));
 const group_1 = __importDefault(require("./routes/group"));
+const publisherRedis_1 = __importDefault(require("./publisherRedis"));
+const subsciberRedis_1 = __importStar(require("./subsciberRedis"));
 const app = (0, express_1.default)();
 app.use(express_1.default.json());
 app.use((0, cors_1.default)({
@@ -70,6 +72,17 @@ app.use((0, cors_1.default)({
 app.use((0, cookie_parser_1.default)());
 const server = http_1.default.createServer(app);
 const wss = new ws_1.WebSocketServer({ server });
+const subscribeToChannel = () => __awaiter(void 0, void 0, void 0, function* () {
+    yield (0, subsciberRedis_1.connectSubscriber)();
+    yield subsciberRedis_1.default.subscribe("messages", (msg) => {
+        console.log("got from redis", msg);
+    });
+});
+subscribeToChannel();
+const publishMessage = () => __awaiter(void 0, void 0, void 0, function* () {
+    yield publisherRedis_1.default.publish("messages", "Im successfull");
+});
+publishMessage();
 app.use("/user", userAuth_1.default);
 app.use("/chat", messages_1.default);
 app.use("/aws", aws_1.default);
@@ -197,7 +210,6 @@ wss.on("connection", (ws, req) => __awaiter(void 0, void 0, void 0, function* ()
                 }
             });
             const userIds = groups.map((group) => { var _a; return (_a = group.members) === null || _a === void 0 ? void 0 : _a.map((user) => user.userId); }).flatMap((id) => id);
-            console.log("userID", userIds);
             userIds.map((id) => {
                 if (usersMap.has(id)) {
                     const ws = usersMap.get(id).ws;

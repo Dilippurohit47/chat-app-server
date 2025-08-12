@@ -13,9 +13,12 @@ import cookieParser from "cookie-parser";
 import { saveMessage } from "./routes/messages";
 import awsRoute from "./aws";
 import groupRoute from "./routes/group";
+import  publisher from "./publisherRedis"
+import  subscriber , {connectSubscriber} from "./subsciberRedis"
 const app = express();
 
 app.use(express.json());
+
 app.use(
   cors({
     origin: [
@@ -30,6 +33,19 @@ app.use(cookieParser());
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
 
+const subscribeToChannel = async() =>{
+await   connectSubscriber()
+
+await subscriber.subscribe("messages",(msg) =>{
+  console.log("got from redis",msg) 
+})
+}
+
+subscribeToChannel()
+const publishMessage = async()=>{ 
+  await publisher.publish("messages","Im successfull")
+}
+publishMessage()
 app.use("/user", userAuth);
 app.use("/chat", Messages);
 app.use("/aws", awsRoute);
@@ -177,7 +193,6 @@ wss.on("connection", async (ws, req) => {
         }
       })
       const userIds = groups.map((group) =>group.members?.map((user) =>user.userId)).flatMap((id) =>id)
-console.log("userID",userIds)
       userIds.map((id) =>{
         if(usersMap.has(id)){
           const ws = usersMap.get(id).ws
