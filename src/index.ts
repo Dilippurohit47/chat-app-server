@@ -15,6 +15,7 @@ import awsRoute from "./aws";
 import groupRoute from "./routes/group";
 import publisher from "./publisherRedis";
 import subscriber, { connectSubscriber } from "./subsciberRedis";
+import { group } from "console";
 const app = express();
 
 app.use(express.json());
@@ -51,6 +52,7 @@ app.get("/", (req, res) => {
 const subscribe = async () => {
   await subscriber.subscribe("messages", async (msg) => {
   const data = JSON.parse(msg.toString());
+  console.log(data)
     if (data.type === "personal-msg") {
       const receiverId = data.receiverId;
 
@@ -126,10 +128,9 @@ const subscribe = async () => {
           );
         }
       });
-    }
+    } 
     if (data.type === "send-groups") {
       const userId = data.userId;
-
       const groups = await prisma.group.findMany({
         where: {
           members: {
@@ -151,21 +152,62 @@ const subscribe = async () => {
           },
         },
       });
-      const userIds = groups
+    if(groups.length <= 0){
+      const {ws} = usersMap.get(userId)
+      if(ws){
+        ws.send(JSON.stringify({
+          type: "get-groups-ws",
+              groups: [],
+        }))
+      }
+      return
+    }
+     if(groups.length > 0){
+       const userIds = groups
         .map((group) => group.members?.map((user) => user.userId))
         .flatMap((id) => id);
       userIds.map((id) => {
         if (usersMap.has(id)) {
           const ws = usersMap.get(id).ws;
-          ws.send(
+          const getPerUserGroup = async() =>{
+const group = await prisma.group.findMany({
+        where: {
+          members: {
+            some: {
+              userId: id,
+            },
+          },
+          deletedby: {
+            none: {
+              userId: id,
+            },
+          },
+        },
+        include: {
+          members: {
+            include: {
+              user: true,
+            },
+          },
+        },
+      });  
+console.log("group",group)
+       ws.send(
             JSON.stringify({
               type: "get-groups-ws",
-              groups: groups,
+              groups: group,
             })
           );
+          
+   }
+          getPerUserGroup()
+    
+          
         }
       });
+     }
     }
+
   });
 };
 subscribe();

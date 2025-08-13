@@ -88,6 +88,7 @@ app.get("/", (req, res) => {
 const subscribe = () => __awaiter(void 0, void 0, void 0, function* () {
     yield subsciberRedis_1.default.subscribe("messages", (msg) => __awaiter(void 0, void 0, void 0, function* () {
         const data = JSON.parse(msg.toString());
+        console.log(data);
         if (data.type === "personal-msg") {
             const receiverId = data.receiverId;
             if (usersMap.has(receiverId)) {
@@ -178,18 +179,55 @@ const subscribe = () => __awaiter(void 0, void 0, void 0, function* () {
                     },
                 },
             });
-            const userIds = groups
-                .map((group) => { var _a; return (_a = group.members) === null || _a === void 0 ? void 0 : _a.map((user) => user.userId); })
-                .flatMap((id) => id);
-            userIds.map((id) => {
-                if (usersMap.has(id)) {
-                    const ws = usersMap.get(id).ws;
+            if (groups.length <= 0) {
+                const { ws } = usersMap.get(userId);
+                if (ws) {
                     ws.send(JSON.stringify({
                         type: "get-groups-ws",
-                        groups: groups,
+                        groups: [],
                     }));
                 }
-            });
+                return;
+            }
+            if (groups.length > 0) {
+                const userIds = groups
+                    .map((group) => { var _a; return (_a = group.members) === null || _a === void 0 ? void 0 : _a.map((user) => user.userId); })
+                    .flatMap((id) => id);
+                userIds.map((id) => {
+                    if (usersMap.has(id)) {
+                        const ws = usersMap.get(id).ws;
+                        const getPerUserGroup = () => __awaiter(void 0, void 0, void 0, function* () {
+                            const group = yield prisma_1.prisma.group.findMany({
+                                where: {
+                                    members: {
+                                        some: {
+                                            userId: id,
+                                        },
+                                    },
+                                    deletedby: {
+                                        none: {
+                                            userId: id,
+                                        },
+                                    },
+                                },
+                                include: {
+                                    members: {
+                                        include: {
+                                            user: true,
+                                        },
+                                    },
+                                },
+                            });
+                            console.log("group", group);
+                            ws.send(JSON.stringify({
+                                type: "get-groups-ws",
+                                groups: group,
+                            }));
+                        });
+                        getPerUserGroup();
+                    }
+                });
+            }
         }
     }));
 });
