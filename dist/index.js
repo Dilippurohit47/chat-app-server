@@ -72,30 +72,22 @@ app.use((0, cors_1.default)({
 app.use((0, cookie_parser_1.default)());
 const server = http_1.default.createServer(app);
 const wss = new ws_1.WebSocketServer({ server });
-const subscribeToChannel = () => __awaiter(void 0, void 0, void 0, function* () {
-    yield (0, subsciberRedis_1.connectSubscriber)();
-    yield subsciberRedis_1.default.subscribe("messages", (msg) => {
-        console.log("got from redis", msg);
-    });
-});
-subscribeToChannel();
-const publishMessage = () => __awaiter(void 0, void 0, void 0, function* () {
-    yield publisherRedis_1.default.publish("messages", "Im successfull");
-});
-publishMessage();
 app.use("/user", userAuth_1.default);
 app.use("/chat", messages_1.default);
 app.use("/aws", aws_1.default);
 app.use("/group", group_1.default);
 app.use("/chat-setting", chat_1.default);
 const usersMap = new Map();
+const subscribeToChannel = () => __awaiter(void 0, void 0, void 0, function* () {
+    yield (0, subsciberRedis_1.connectSubscriber)();
+});
+subscribeToChannel();
 app.get("/", (req, res) => {
     res.send("server is live");
 });
-wss.on("connection", (ws, req) => __awaiter(void 0, void 0, void 0, function* () {
-    ws.on("message", (m) => __awaiter(void 0, void 0, void 0, function* () {
-        var _a;
-        const data = JSON.parse(m.toString());
+const subscribe = () => __awaiter(void 0, void 0, void 0, function* () {
+    yield subsciberRedis_1.default.subscribe("messages", (msg) => __awaiter(void 0, void 0, void 0, function* () {
+        const data = JSON.parse(msg.toString());
         if (data.type === "personal-msg") {
             const receiverId = data.receiverId;
             if (usersMap.has(receiverId)) {
@@ -134,29 +126,6 @@ wss.on("connection", (ws, req) => __awaiter(void 0, void 0, void 0, function* ()
                 }
             }
         }
-        console.log(data);
-        if (data.type === "user-info") {
-            const user = yield prisma_1.prisma.user.findUnique({
-                where: {
-                    id: data.userId,
-                },
-            });
-            console.log("user ", user);
-            if (user) {
-                usersMap.set(user.id, { ws, userInfo: user });
-                const onlineUsers = Array.from(usersMap.entries()).map(([userId, userObj]) => (Object.assign({ userId }, userObj.userInfo)));
-                wss.clients.forEach((c) => {
-                    c.send(JSON.stringify({ type: "online-users", onlineUsers: onlineUsers }));
-                });
-            }
-        }
-        if (data.type === "get-recent-chats") {
-            const recentChats = yield (0, messages_1.sendRecentChats)(data.userId);
-            (_a = usersMap.get(data.userId)) === null || _a === void 0 ? void 0 : _a.ws.send(JSON.stringify({
-                type: "recent-chats",
-                chats: recentChats,
-            }));
-        }
         if (data.type === "group-message") {
             const groupId = data.groupId;
             const groupMembers = yield prisma_1.prisma.group.findFirst({
@@ -181,7 +150,7 @@ wss.on("connection", (ws, req) => __awaiter(void 0, void 0, void 0, function* ()
                     ws === null || ws === void 0 ? void 0 : ws.send(JSON.stringify({
                         type: "group-message",
                         content: data.message.content,
-                        senderId: data.message.senderId
+                        senderId: data.message.senderId,
                     }));
                 }
             });
@@ -192,33 +161,64 @@ wss.on("connection", (ws, req) => __awaiter(void 0, void 0, void 0, function* ()
                 where: {
                     members: {
                         some: {
-                            userId: userId
-                        }
+                            userId: userId,
+                        },
                     },
                     deletedby: {
                         none: {
-                            userId: userId
-                        }
-                    }
+                            userId: userId,
+                        },
+                    },
                 },
                 include: {
                     members: {
                         include: {
-                            user: true
-                        }
-                    }
-                }
+                            user: true,
+                        },
+                    },
+                },
             });
-            const userIds = groups.map((group) => { var _a; return (_a = group.members) === null || _a === void 0 ? void 0 : _a.map((user) => user.userId); }).flatMap((id) => id);
+            const userIds = groups
+                .map((group) => { var _a; return (_a = group.members) === null || _a === void 0 ? void 0 : _a.map((user) => user.userId); })
+                .flatMap((id) => id);
             userIds.map((id) => {
                 if (usersMap.has(id)) {
                     const ws = usersMap.get(id).ws;
                     ws.send(JSON.stringify({
                         type: "get-groups-ws",
-                        groups: groups
+                        groups: groups,
                     }));
                 }
             });
+        }
+    }));
+});
+subscribe();
+wss.on("connection", (ws, req) => __awaiter(void 0, void 0, void 0, function* () {
+    ws.on("message", (m) => __awaiter(void 0, void 0, void 0, function* () {
+        var _a;
+        yield publisherRedis_1.default.publish("messages", m.toString());
+        const data = JSON.parse(m.toString());
+        if (data.type === "user-info") {
+            const user = yield prisma_1.prisma.user.findUnique({
+                where: {
+                    id: data.userId,
+                },
+            });
+            if (user) {
+                usersMap.set(user.id, { ws, userInfo: user });
+                const onlineUsers = Array.from(usersMap.entries()).map(([userId, userObj]) => (Object.assign({ userId }, userObj.userInfo)));
+                wss.clients.forEach((c) => {
+                    c.send(JSON.stringify({ type: "online-users", onlineUsers: onlineUsers }));
+                });
+            }
+        }
+        if (data.type === "get-recent-chats") {
+            const recentChats = yield (0, messages_1.sendRecentChats)(data.userId);
+            (_a = usersMap.get(data.userId)) === null || _a === void 0 ? void 0 : _a.ws.send(JSON.stringify({
+                type: "recent-chats",
+                chats: recentChats,
+            }));
         }
     }));
     ws.on("close", () => {
@@ -235,6 +235,7 @@ wss.on("connection", (ws, req) => __awaiter(void 0, void 0, void 0, function* ()
         }
     });
 }));
-server.listen(8000, () => {
+const PORT = process.env.PORT || 8000;
+server.listen(PORT, () => {
     console.log("Server is running on 8000");
 });

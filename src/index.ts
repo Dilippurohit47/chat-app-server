@@ -8,13 +8,13 @@ import Messages, {
   sendRecentChats,
   upsertRecentChats,
 } from "./routes/messages";
-import Chat from "./routes/chat"
+import Chat from "./routes/chat";
 import cookieParser from "cookie-parser";
 import { saveMessage } from "./routes/messages";
 import awsRoute from "./aws";
 import groupRoute from "./routes/group";
-import  publisher from "./publisherRedis"
-import  subscriber , {connectSubscriber} from "./subsciberRedis"
+import publisher from "./publisherRedis";
+import subscriber, { connectSubscriber } from "./subsciberRedis";
 const app = express();
 
 app.use(express.json());
@@ -26,26 +26,13 @@ app.use(
       "https://chat-app-client-tawny.vercel.app",
     ],
     credentials: true,
-    methods: ["GET", "POST", "PUT", "OPTIONS","DELETE"],
+    methods: ["GET", "POST", "PUT", "OPTIONS", "DELETE"],
   })
 );
 app.use(cookieParser());
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
 
-const subscribeToChannel = async() =>{
-await   connectSubscriber()
-
-await subscriber.subscribe("messages",(msg) =>{
-  console.log("got from redis",msg) 
-})
-}
-
-subscribeToChannel()
-const publishMessage = async()=>{ 
-  await publisher.publish("messages","Im successfull")
-}
-publishMessage()
 app.use("/user", userAuth);
 app.use("/chat", Messages);
 app.use("/aws", awsRoute);
@@ -53,28 +40,33 @@ app.use("/group", groupRoute);
 app.use("/chat-setting", Chat);
 const usersMap = new Map();
 
+const subscribeToChannel = async () => {
+  await connectSubscriber();
+};
+subscribeToChannel();
 app.get("/", (req, res) => {
   res.send("server is live");
 });
-wss.on("connection", async (ws, req) => {
-  ws.on("message", async (m) => {
-    const data = JSON.parse(m.toString()); 
+
+const subscribe = async () => {
+  await subscriber.subscribe("messages", async (msg) => {
+  const data = JSON.parse(msg.toString());
     if (data.type === "personal-msg") {
       const receiverId = data.receiverId;
 
       if (usersMap.has(receiverId)) {
         let { ws } = usersMap.get(receiverId);
         ws.send(
-          JSON.stringify({    
+          JSON.stringify({
             type: "personal-msg",
-            message: data.message,    
+            message: data.message,
             receiverId: receiverId,
-            senderId: data.senderId, 
+            senderId: data.senderId,
           })
         );
       }
       if (data.senderId || receiverId || data.message) {
-        await saveMessage(data.senderId, receiverId, data.message,data.chatId);
+        await saveMessage(data.senderId, receiverId, data.message, data.chatId);
         const senderRecentChats = await sendRecentChats(data.senderId);
         const receiverRecentChats = await sendRecentChats(data.receiverId);
 
@@ -85,10 +77,10 @@ wss.on("connection", async (ws, req) => {
               JSON.stringify({
                 type: "recent-chats",
                 chats: senderRecentChats,
-              }) 
+              })
             );
           }
-        } 
+        }
 
         if (usersMap.has(receiverId)) {
           let receiverWs = usersMap.get(receiverId).ws;
@@ -103,39 +95,7 @@ wss.on("connection", async (ws, req) => {
             console.log(`❌ WebSocket not open for receiver (${receiverId})`);
           }
         }
-      } 
-    }
-    console.log(data)
-    if (data.type === "user-info") {
-      const user = await prisma.user.findUnique({
-        where: {
-          id: data.userId,
-        },
-      });
-      console.log("user ",user)
-      if (user) {
-        usersMap.set(user.id, { ws, userInfo: user });
-        const onlineUsers = Array.from(usersMap.entries()).map(
-          ([userId, userObj]) => ({
-            userId,
-            ...userObj.userInfo,
-          })
-        );
-        wss.clients.forEach((c) => {
-          c.send(
-            JSON.stringify({ type: "online-users", onlineUsers: onlineUsers })
-          );
-        });
       }
-    }
-    if (data.type === "get-recent-chats") {
-      const recentChats = await sendRecentChats(data.userId);
-      usersMap.get(data.userId)?.ws.send(
-        JSON.stringify({
-          type: "recent-chats",
-          chats: recentChats,
-        })
-      );
     }
     if (data.type === "group-message") {
       const groupId = data.groupId;
@@ -152,8 +112,8 @@ wss.on("connection", async (ws, req) => {
         },
       });
       groupMembers?.members.map((user) => {
-        if(user.userId === data.message.senderId){ 
-          return
+        if (user.userId === data.message.senderId) {
+          return;
         }
         const ws = usersMap.get(user.userId)?.ws;
         if (ws) {
@@ -161,49 +121,89 @@ wss.on("connection", async (ws, req) => {
             JSON.stringify({
               type: "group-message",
               content: data.message.content,
-              senderId:data.message.senderId
+              senderId: data.message.senderId,
             })
           );
         }
       });
     }
-    if(data.type === "send-groups"){
-      const userId = data.userId
+    if (data.type === "send-groups") {
+      const userId = data.userId;
 
       const groups = await prisma.group.findMany({
-        where:{
-          members:{
-            some:{ 
-              userId:userId
-            }
+        where: {
+          members: {
+            some: {
+              userId: userId,
+            },
           },
-          deletedby:{
-            none:{ 
-              userId:userId
-            }
-
-          }
+          deletedby: {
+            none: {
+              userId: userId,
+            },
+          },
         },
-        include:{
-          members:{
-            include:{
-              user:true
-            }
-          }
+        include: {
+          members: {
+            include: {
+              user: true,
+            },
+          },
+        },
+      });
+      const userIds = groups
+        .map((group) => group.members?.map((user) => user.userId))
+        .flatMap((id) => id);
+      userIds.map((id) => {
+        if (usersMap.has(id)) {
+          const ws = usersMap.get(id).ws;
+          ws.send(
+            JSON.stringify({
+              type: "get-groups-ws",
+              groups: groups,
+            })
+          );
         }
-      })
-      const userIds = groups.map((group) =>group.members?.map((user) =>user.userId)).flatMap((id) =>id)
-      userIds.map((id) =>{
-        if(usersMap.has(id)){
-          const ws = usersMap.get(id).ws
-                ws.send(JSON.stringify({
-        type:"get-groups-ws",
-        groups:groups
-      }))
-        }
-      })
+      });
+    }
+  });
+};
+subscribe();
 
-
+wss.on("connection", async (ws, req) => {
+  ws.on("message", async (m) => {
+    await publisher.publish("messages", m.toString());
+    const data = JSON.parse(m.toString());
+       if (data.type === "user-info") {
+      const user = await prisma.user.findUnique({
+        where: {
+          id: data.userId,
+        },
+      });
+      
+      if (user) {
+        usersMap.set(user.id, { ws, userInfo: user });
+        const onlineUsers = Array.from(usersMap.entries()).map(
+          ([userId, userObj]) => ({
+            userId,
+            ...userObj.userInfo,
+          })
+        );
+        wss.clients.forEach((c) => {
+          c.send(
+            JSON.stringify({ type: "online-users", onlineUsers: onlineUsers })
+          );
+        });
+      }
+    }
+        if (data.type === "get-recent-chats") {
+      const recentChats = await sendRecentChats(data.userId);
+      usersMap.get(data.userId)?.ws.send(
+        JSON.stringify({
+          type: "recent-chats",
+          chats: recentChats,
+        })
+      );
     }
   });
 
@@ -230,6 +230,8 @@ wss.on("connection", async (ws, req) => {
   });
 });
 
-server.listen(8000, () => {
+const PORT = process.env.PORT || 8000
+
+server.listen(PORT, () => {
   console.log("Server is running on 8000");
 });

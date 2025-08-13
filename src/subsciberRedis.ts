@@ -12,9 +12,7 @@ subscriber.on("error", (err) => {
   console.error("Redis Subscriber Error:", err);
 });
  
- subscriber.subscribe("messages",(msg) =>{
-  console.log("got from redis",msg)
-})
+
 
 export async function connectSubscriber() {
   if (!subscriber.isOpen) {
