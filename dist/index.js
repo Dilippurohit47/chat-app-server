@@ -88,7 +88,6 @@ app.get("/", (req, res) => {
 const subscribe = () => __awaiter(void 0, void 0, void 0, function* () {
     yield subsciberRedis_1.default.subscribe("messages", (msg) => __awaiter(void 0, void 0, void 0, function* () {
         const data = JSON.parse(msg.toString());
-        console.log(data);
         if (data.type === "personal-msg") {
             const receiverId = data.receiverId;
             if (usersMap.has(receiverId)) {
@@ -218,7 +217,6 @@ const subscribe = () => __awaiter(void 0, void 0, void 0, function* () {
                                     },
                                 },
                             });
-                            console.log("group", group);
                             ws.send(JSON.stringify({
                                 type: "get-groups-ws",
                                 groups: group,

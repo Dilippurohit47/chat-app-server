@@ -17,6 +17,7 @@ const prisma_1 = require("../utils/prisma");
 const helper_1 = require("../utils/helper");
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const zod_1 = require("../types/zod");
+const redis_1 = __importDefault(require("../redis/redis"));
 const app = express_1.default.Router();
 app.post("/sign-in", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
@@ -112,7 +113,11 @@ app.get("/get-user", (req, res) => __awaiter(void 0, void 0, void 0, function* (
             });
         }
         const decoded = jsonwebtoken_1.default.verify(cookie, process.env.JWT_SECRET);
-        // ✅ Use `await` in an `async` function
+        const cachedUser = yield redis_1.default.get(`user:${decoded.id}`);
+        if (cachedUser) {
+            res.status(200).json(JSON.parse(cachedUser));
+            return;
+        }
         const user = yield prisma_1.prisma.user.findUnique({
             where: {
                 id: decoded.id,
@@ -121,6 +126,9 @@ app.get("/get-user", (req, res) => __awaiter(void 0, void 0, void 0, function* (
         if (!user) {
             return res.status(404).json({ message: "User not found" });
         }
+        yield redis_1.default.set(`user:${user.id}`, JSON.stringify(user), {
+            EX: 3600
+        });
         res.status(200).json(user);
     }
     catch (error) {

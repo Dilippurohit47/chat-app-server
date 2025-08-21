@@ -1,7 +1,7 @@
 import express, { Request, Response } from "express";
 import { prisma } from "../utils/prisma";
 import { authorizeToken } from "../middlewares";
-
+import redis from "../redis/redis"
 const app = express.Router();
 
 app.post("/create-group", async (req: Request, res: Response) => {
@@ -36,7 +36,19 @@ app.post("/create-group", async (req: Request, res: Response) => {
 
 app.get("/", authorizeToken, async (req: Request, res: Response) => {
   try {
+
     const userId = req.user.id;
+
+    const cachedgroups = await redis.get(`groupId:${userId}`)
+
+    if(cachedgroups){
+      res.status(200).json({
+        groups:JSON.parse(cachedgroups),
+        message:"from redis cache"
+      })
+      return
+    }
+
     const groups = await prisma.group.findMany({
       where: {
         members: {
@@ -59,6 +71,11 @@ app.get("/", authorizeToken, async (req: Request, res: Response) => {
       },
       
     });
+
+    await redis.set(`groupId:${userId}`,JSON.stringify(groups),{
+      EX:'3600'
+    })
+
     res.status(200).json({
       groups: groups,
     });

@@ -15,7 +15,6 @@ import awsRoute from "./aws";
 import groupRoute from "./routes/group";
 import publisher from "./publisherRedis";
 import subscriber, { connectSubscriber } from "./subsciberRedis";
-import { group } from "console";
 const app = express();
 
 app.use(express.json());
@@ -34,7 +33,7 @@ app.use(cookieParser());
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
 
-app.use("/user", userAuth);
+app.use("/user", userAuth); 
 app.use("/chat", Messages);
 app.use("/aws", awsRoute);
 app.use("/group", groupRoute);
@@ -45,6 +44,7 @@ const subscribeToChannel = async () => {
   await connectSubscriber();
 };
 subscribeToChannel();
+
 app.get("/", (req, res) => {
   res.send("server is live");
 });
@@ -52,7 +52,6 @@ app.get("/", (req, res) => {
 const subscribe = async () => {
   await subscriber.subscribe("messages", async (msg) => {
   const data = JSON.parse(msg.toString());
-  console.log(data)
     if (data.type === "personal-msg") {
       const receiverId = data.receiverId;
 
@@ -191,7 +190,6 @@ const group = await prisma.group.findMany({
           },
         },
       });  
-console.log("group",group)
        ws.send(
             JSON.stringify({
               type: "get-groups-ws",
@@ -206,8 +204,7 @@ console.log("group",group)
         }
       });
      }
-    }
-
+    } 
   });
 };
 subscribe();

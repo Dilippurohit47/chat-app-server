@@ -3,6 +3,8 @@ import { prisma } from "../utils/prisma";
 import { formatZodError, sendToken } from "../utils/helper";
 import jwt from "jsonwebtoken";
 import { singnUpSchema } from "../types/zod";
+import redis from "../redis/redis"
+
 const app = express.Router();
 
 app.post("/sign-in", async (req, res) => {
@@ -97,6 +99,11 @@ if(userExist){
   }
 });
 
+
+
+
+
+
 app.get("/get-user", async (req, res) => {
   try {
     const cookie = req.cookies["chat-token"];
@@ -108,7 +115,12 @@ app.get("/get-user", async (req, res) => {
     }
     const decoded = jwt.verify(cookie,process.env.JWT_SECRET!);
 
-    // ✅ Use `await` in an `async` function
+const cachedUser = await redis.get(`user:${decoded.id}`)
+if(cachedUser){
+  res.status(200).json(JSON.parse(cachedUser))
+  return 
+}
+ 
     const user = await prisma.user.findUnique({
       where: {
         id: decoded.id,
@@ -117,7 +129,8 @@ app.get("/get-user", async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
-
+await redis.set(`user:${user.id}`,JSON.stringify(user),{
+  EX:3600})
     res.status(200).json(user);
   } catch (error) {
     console.error("Error fetching user:", error);

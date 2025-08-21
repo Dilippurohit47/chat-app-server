@@ -15,6 +15,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const prisma_1 = require("../utils/prisma");
 const middlewares_1 = require("../middlewares");
+const redis_1 = __importDefault(require("../redis/redis"));
 const app = express_1.default.Router();
 app.post("/create-group", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
@@ -49,6 +50,14 @@ app.post("/create-group", (req, res) => __awaiter(void 0, void 0, void 0, functi
 app.get("/", middlewares_1.authorizeToken, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const userId = req.user.id;
+        const cachedgroups = yield redis_1.default.get(`groupId:${userId}`);
+        if (cachedgroups) {
+            res.status(200).json({
+                groups: JSON.parse(cachedgroups),
+                message: "from redis cache"
+            });
+            return;
+        }
         const groups = yield prisma_1.prisma.group.findMany({
             where: {
                 members: {
@@ -69,6 +78,9 @@ app.get("/", middlewares_1.authorizeToken, (req, res) => __awaiter(void 0, void 
                     },
                 },
             },
+        });
+        yield redis_1.default.set(`groupId:${userId}`, JSON.stringify(groups), {
+            EX: '3600'
         });
         res.status(200).json({
             groups: groups,
