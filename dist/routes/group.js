@@ -36,6 +36,10 @@ app.post("/create-group", (req, res) => __awaiter(void 0, void 0, void 0, functi
                 },
             },
         });
+        members.forEach((userId) => __awaiter(void 0, void 0, void 0, function* () {
+            console.log(userId);
+            yield redis_1.default.del(`groupId:${userId}`);
+        }));
         res.status(200).json({
             message: "Group Created successfully",
         });
@@ -51,6 +55,7 @@ app.get("/", middlewares_1.authorizeToken, (req, res) => __awaiter(void 0, void 
     try {
         const userId = req.user.id;
         const cachedgroups = yield redis_1.default.get(`groupId:${userId}`);
+        console.log(cachedgroups);
         if (cachedgroups) {
             res.status(200).json({
                 groups: JSON.parse(cachedgroups),

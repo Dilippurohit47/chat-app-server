@@ -6,7 +6,7 @@ const app = express.Router();
 
 app.post("/create-group", async (req: Request, res: Response) => {
   try {
-    const { name, members } = req.body;
+    const { name, members }:{members:string[],name:string} = req.body;
     if (!name || members.length <= 0) {
       res.status(403).json({
         message: "Missing elements required",
@@ -23,6 +23,10 @@ app.post("/create-group", async (req: Request, res: Response) => {
         },
       },
     });
+members.forEach( async(userId) =>{
+  console.log(userId)
+  await redis.del(`groupId:${userId}`)
+})
     res.status(200).json({
       message: "Group Created successfully",
     });
@@ -40,7 +44,7 @@ app.get("/", authorizeToken, async (req: Request, res: Response) => {
     const userId = req.user.id;
 
     const cachedgroups = await redis.get(`groupId:${userId}`)
-
+console.log(cachedgroups)
     if(cachedgroups){
       res.status(200).json({
         groups:JSON.parse(cachedgroups),
