@@ -24,7 +24,6 @@ app.post("/create-group", async (req: Request, res: Response) => {
       },
     });
 members.forEach( async(userId) =>{
-  console.log(userId)
   await redis.del(`groupId:${userId}`)
 })
     res.status(200).json({
@@ -111,13 +110,23 @@ app.post("/add-new-members", async (req, res) => {
           })),
         },
       },
-    });
+      include:{
+        members:true
+      }
+    });   
+
+    console.log(data)
+
+    data?.members?.forEach(async(member) =>{
+await redis.del(`groupId:${member.userId}`)
+    })  
+
     res.status(200).json({
       message: "Group updated successfully",
     });
   } catch (error) {
     console.log(error);
-    res.status(500).json({
+    res.status(500).json({ 
       message: "Internal server error",
     });
     return;
@@ -140,6 +149,8 @@ app.delete("/delete-group/:groupId/:userId", async (req, res) => {
         groupId:groupId
       }
     })
+
+    await redis.del(`groupId:${userId}`)
 
 res.status(200).json({ success: true, message: "Group deleted successfully" });
   } catch (error) {

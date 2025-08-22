@@ -51,6 +51,7 @@ const http_1 = __importDefault(require("http"));
 const cors_1 = __importDefault(require("cors"));
 const prisma_1 = require("./utils/prisma");
 const userAuth_1 = __importDefault(require("./routes/userAuth"));
+const redis_1 = __importDefault(require("./redis/redis"));
 const messages_1 = __importStar(require("./routes/messages"));
 const chat_1 = __importDefault(require("./routes/chat"));
 const cookie_parser_1 = __importDefault(require("cookie-parser"));
@@ -243,9 +244,15 @@ wss.on("connection", (ws, req) => __awaiter(void 0, void 0, void 0, function* ()
             });
             if (user) {
                 usersMap.set(user.id, { ws, userInfo: user });
-                const onlineUsers = Array.from(usersMap.entries()).map(([userId, userObj]) => (Object.assign({ userId }, userObj.userInfo)));
+                const onlineUsers = Array.from(usersMap.entries()).map((_a) => __awaiter(void 0, [_a], void 0, function* ([userId, userObj]) {
+                    yield redis_1.default.sAdd("online-users", userId);
+                    return Object.assign({ userId }, userObj.userInfo);
+                }));
+                const onlineMembers = yield redis_1.default.sMembers("online-users");
+                console.log("online members", onlineMembers);
                 wss.clients.forEach((c) => {
-                    c.send(JSON.stringify({ type: "online-users", onlineUsers: onlineUsers }));
+                    console.log("send");
+                    c.send(JSON.stringify({ type: "online-users", onlineUsers: onlineMembers }));
                 });
             }
         }
@@ -257,19 +264,18 @@ wss.on("connection", (ws, req) => __awaiter(void 0, void 0, void 0, function* ()
             }));
         }
     }));
-    ws.on("close", () => {
+    ws.on("close", () => __awaiter(void 0, void 0, void 0, function* () {
         var _a;
         const userId = (_a = Array.from(usersMap.entries()).find(([id, socket]) => socket.ws === ws)) === null || _a === void 0 ? void 0 : _a[0];
         if (userId) {
             usersMap.delete(userId);
-            console.log(`User ${userId} removed. Active users: ${usersMap.size}`);
-            // sending online users again after removing closed user from user list
-            const onlineUsers = Array.from(usersMap.entries()).map(([userId, userObj]) => (Object.assign({ userId }, userObj.userInfo)));
+            yield redis_1.default.sRem("online-users", userId);
+            const onlineMembers = yield redis_1.default.sMembers("online-users");
             wss.clients.forEach((c) => {
-                c.send(JSON.stringify({ type: "online-users", onlineUsers: onlineUsers }));
+                c.send(JSON.stringify({ type: "online-users", onlineUsers: onlineMembers }));
             });
         }
-    });
+    }));
 }));
 const PORT = process.env.PORT || 8000;
 server.listen(PORT, () => {

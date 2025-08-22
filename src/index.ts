@@ -4,6 +4,7 @@ import http from "http";
 import cors from "cors";
 import { prisma } from "./utils/prisma";
 import userAuth from "./routes/userAuth";
+import redis from "./redis/redis";
 import Messages, {
   sendRecentChats,
   upsertRecentChats,
@@ -33,7 +34,7 @@ app.use(cookieParser());
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
 
-app.use("/user", userAuth); 
+app.use("/user", userAuth);
 app.use("/chat", Messages);
 app.use("/aws", awsRoute);
 app.use("/group", groupRoute);
@@ -51,7 +52,7 @@ app.get("/", (req, res) => {
 
 const subscribe = async () => {
   await subscriber.subscribe("messages", async (msg) => {
-  const data = JSON.parse(msg.toString());
+    const data = JSON.parse(msg.toString());
     if (data.type === "personal-msg") {
       const receiverId = data.receiverId;
 
@@ -127,7 +128,7 @@ const subscribe = async () => {
           );
         }
       });
-    } 
+    }
     if (data.type === "send-groups") {
       const userId = data.userId;
       const groups = await prisma.group.findMany({
@@ -151,60 +152,59 @@ const subscribe = async () => {
           },
         },
       });
-    if(groups.length <= 0){
-      const {ws} = usersMap.get(userId)
-      if(ws){
-        ws.send(JSON.stringify({
-          type: "get-groups-ws",
-              groups: [],
-        }))
-      }
-      return
-    }
-     if(groups.length > 0){
-       const userIds = groups
-        .map((group) => group.members?.map((user) => user.userId))
-        .flatMap((id) => id);
-      userIds.map((id) => {
-        if (usersMap.has(id)) {
-          const ws = usersMap.get(id).ws;
-          const getPerUserGroup = async() =>{
-const group = await prisma.group.findMany({
-        where: {
-          members: {
-            some: {
-              userId: id,
-            },
-          },
-          deletedby: {
-            none: {
-              userId: id,
-            },
-          },
-        },
-        include: {
-          members: {
-            include: {
-              user: true,
-            },
-          },
-        },
-      });  
-       ws.send(
+      if (groups.length <= 0) {
+        const { ws } = usersMap.get(userId);
+        if (ws) {
+          ws.send(
             JSON.stringify({
               type: "get-groups-ws",
-              groups: group,
+              groups: [],
             })
           );
-          
-   }
-          getPerUserGroup()
-    
-          
         }
-      });
-     }
-    } 
+        return;
+      }
+      if (groups.length > 0) {
+        const userIds = groups
+          .map((group) => group.members?.map((user) => user.userId))
+          .flatMap((id) => id);
+        userIds.map((id) => {
+          if (usersMap.has(id)) {
+            const ws = usersMap.get(id).ws;
+            const getPerUserGroup = async () => {
+              const group = await prisma.group.findMany({
+                where: {
+                  members: {
+                    some: {
+                      userId: id,
+                    },
+                  },
+                  deletedby: {
+                    none: {
+                      userId: id,
+                    },
+                  },
+                },
+                include: {
+                  members: {
+                    include: {
+                      user: true,
+                    },
+                  },
+                },
+              });
+              ws.send(
+                JSON.stringify({
+                  type: "get-groups-ws",
+                  groups: group,
+                })
+              );
+            };
+            getPerUserGroup();
+          }
+        });
+      }
+    }
   });
 };
 subscribe();
@@ -213,29 +213,37 @@ wss.on("connection", async (ws, req) => {
   ws.on("message", async (m) => {
     await publisher.publish("messages", m.toString());
     const data = JSON.parse(m.toString());
-       if (data.type === "user-info") {
+    if (data.type === "user-info") {
       const user = await prisma.user.findUnique({
         where: {
           id: data.userId,
-        },
+        }, 
       });
-      
+
       if (user) {
         usersMap.set(user.id, { ws, userInfo: user });
         const onlineUsers = Array.from(usersMap.entries()).map(
-          ([userId, userObj]) => ({
-            userId,
-            ...userObj.userInfo,
-          })
+          async([userId, userObj]) => { 
+            await redis.sAdd("online-users", userId);
+            return {
+              userId,
+              ...userObj.userInfo,
+            };
+          }
         );
+
+        const onlineMembers = await redis.sMembers("online-users")
+        console.log("online members",onlineMembers)
+
         wss.clients.forEach((c) => {
+          console.log("send")
           c.send(
-            JSON.stringify({ type: "online-users", onlineUsers: onlineUsers })
+            JSON.stringify({ type: "online-users", onlineUsers: onlineMembers })
           );
         });
       }
     }
-        if (data.type === "get-recent-chats") {
+    if (data.type === "get-recent-chats") {
       const recentChats = await sendRecentChats(data.userId);
       usersMap.get(data.userId)?.ws.send(
         JSON.stringify({
@@ -246,30 +254,24 @@ wss.on("connection", async (ws, req) => {
     }
   });
 
-  ws.on("close", () => {
+  ws.on("close",async () => {
     const userId = Array.from(usersMap.entries()).find(
       ([id, socket]) => socket.ws === ws
     )?.[0];
     if (userId) {
       usersMap.delete(userId);
-      console.log(`User ${userId} removed. Active users: ${usersMap.size}`);
-      // sending online users again after removing closed user from user list
-      const onlineUsers = Array.from(usersMap.entries()).map(
-        ([userId, userObj]) => ({
-          userId,
-          ...userObj.userInfo,
-        })
-      );
+      await redis.sRem("online-users",userId)
+      const onlineMembers = await redis.sMembers("online-users")
       wss.clients.forEach((c) => {
         c.send(
-          JSON.stringify({ type: "online-users", onlineUsers: onlineUsers })
+          JSON.stringify({ type: "online-users", onlineUsers: onlineMembers })
         );
       });
     }
   });
 });
 
-const PORT = process.env.PORT || 8000
+const PORT = process.env.PORT || 8000;
 
 server.listen(PORT, () => {
   console.log("Server is running on 8000");

@@ -37,7 +37,6 @@ app.post("/create-group", (req, res) => __awaiter(void 0, void 0, void 0, functi
             },
         });
         members.forEach((userId) => __awaiter(void 0, void 0, void 0, function* () {
-            console.log(userId);
             yield redis_1.default.del(`groupId:${userId}`);
         }));
         res.status(200).json({
@@ -99,6 +98,7 @@ app.get("/", middlewares_1.authorizeToken, (req, res) => __awaiter(void 0, void 
     }
 }));
 app.post("/add-new-members", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
     try {
         const { newMembers } = req.body;
         const { groupId } = req.query;
@@ -118,7 +118,14 @@ app.post("/add-new-members", (req, res) => __awaiter(void 0, void 0, void 0, fun
                     })),
                 },
             },
+            include: {
+                members: true
+            }
         });
+        console.log(data);
+        (_a = data === null || data === void 0 ? void 0 : data.members) === null || _a === void 0 ? void 0 : _a.forEach((member) => __awaiter(void 0, void 0, void 0, function* () {
+            yield redis_1.default.del(`groupId:${member.userId}`);
+        }));
         res.status(200).json({
             message: "Group updated successfully",
         });
@@ -146,6 +153,7 @@ app.delete("/delete-group/:groupId/:userId", (req, res) => __awaiter(void 0, voi
                 groupId: groupId
             }
         });
+        yield redis_1.default.del(`groupId:${userId}`);
         res.status(200).json({ success: true, message: "Group deleted successfully" });
     }
     catch (error) {
