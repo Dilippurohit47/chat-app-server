@@ -98,10 +98,11 @@ const subscribe = () => __awaiter(void 0, void 0, void 0, function* () {
                     message: data.message,
                     receiverId: receiverId,
                     senderId: data.senderId,
+                    isMedia: data.isMedia || false
                 }));
             }
             if (data.senderId || receiverId || data.message) {
-                yield (0, messages_2.saveMessage)(data.senderId, receiverId, data.message, data.chatId);
+                yield (0, messages_2.saveMessage)(data.senderId, receiverId, data.message, data.isMedia);
                 const senderRecentChats = yield (0, messages_1.sendRecentChats)(data.senderId);
                 const receiverRecentChats = yield (0, messages_1.sendRecentChats)(data.receiverId);
                 if (usersMap.has(data.senderId)) {
@@ -249,9 +250,7 @@ wss.on("connection", (ws, req) => __awaiter(void 0, void 0, void 0, function* ()
                     return Object.assign({ userId }, userObj.userInfo);
                 }));
                 const onlineMembers = yield redis_1.default.sMembers("online-users");
-                console.log("online members", onlineMembers);
                 wss.clients.forEach((c) => {
-                    console.log("send");
                     c.send(JSON.stringify({ type: "online-users", onlineUsers: onlineMembers }));
                 });
             }

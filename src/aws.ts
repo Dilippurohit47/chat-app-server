@@ -1,4 +1,4 @@
-import {S3Client, GetObjectCommand, PutObjectCommand} from "@aws-sdk/client-s3"
+import {S3Client, PutObjectCommand} from "@aws-sdk/client-s3"
 import {getSignedUrl} from "@aws-sdk/s3-request-presigner"
 import dotenv from "dotenv"
 dotenv.config()
@@ -18,6 +18,24 @@ app.post("/get-presigned-url-s3",async(req,res) =>{
     const command = new PutObjectCommand({
       Bucket: "chat-app-bucket47", 
       Key: `profile-pictures/${Date.now()}-${"profile-image"}`,
+      ContentType: "jpeg",
+    });
+  
+    const url =  await getSignedUrl(s3, command, { expiresIn: 60 });  
+    res.status(200).json({
+      url
+    })
+  } catch (error) {
+    res.status(500).json({
+      message:"Internal server error"
+    })
+  }
+})
+app.post("/get-presigned-url-s3-media",async(req,res) =>{
+  try {
+    const command = new PutObjectCommand({
+      Bucket: "chat-app-bucket47", 
+      Key: `media-images/${Date.now()}-${"media"}`,
       ContentType: "jpeg",
     });
   

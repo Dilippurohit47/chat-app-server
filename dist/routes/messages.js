@@ -69,7 +69,7 @@ const upsertRecentChats = (userId1, userId2, lastMessage) => __awaiter(void 0, v
     }
 });
 exports.upsertRecentChats = upsertRecentChats;
-const saveMessage = (senderId, receiverId, content) => __awaiter(void 0, void 0, void 0, function* () {
+const saveMessage = (senderId, receiverId, content, isMedia) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const chat = yield (0, exports.upsertRecentChats)(senderId, receiverId, content);
         yield prisma_1.prisma.messages.create({
@@ -78,6 +78,7 @@ const saveMessage = (senderId, receiverId, content) => __awaiter(void 0, void 0,
                 receiverId: receiverId,
                 content: content,
                 chatId: chat.id,
+                isMedia: isMedia
             },
         });
         return true;

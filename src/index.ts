@@ -7,7 +7,6 @@ import userAuth from "./routes/userAuth";
 import redis from "./redis/redis";
 import Messages, {
   sendRecentChats,
-  upsertRecentChats,
 } from "./routes/messages";
 import Chat from "./routes/chat";
 import cookieParser from "cookie-parser";
@@ -44,7 +43,7 @@ const usersMap = new Map();
 const subscribeToChannel = async () => {
   await connectSubscriber();
 };
-subscribeToChannel();
+subscribeToChannel(); 
 
 app.get("/", (req, res) => {
   res.send("server is live");
@@ -64,11 +63,12 @@ const subscribe = async () => {
             message: data.message,
             receiverId: receiverId,
             senderId: data.senderId,
+            isMedia:data.isMedia || false
           })
         );
       }
       if (data.senderId || receiverId || data.message) {
-        await saveMessage(data.senderId, receiverId, data.message, data.chatId);
+        await saveMessage(data.senderId, receiverId, data.message, data.isMedia);
         const senderRecentChats = await sendRecentChats(data.senderId);
         const receiverRecentChats = await sendRecentChats(data.receiverId);
 
@@ -233,10 +233,8 @@ wss.on("connection", async (ws, req) => {
         );
 
         const onlineMembers = await redis.sMembers("online-users")
-        console.log("online members",onlineMembers)
 
         wss.clients.forEach((c) => {
-          console.log("send")
           c.send(
             JSON.stringify({ type: "online-users", onlineUsers: onlineMembers })
           );
@@ -274,5 +272,5 @@ wss.on("connection", async (ws, req) => {
 const PORT = process.env.PORT || 8000;
 
 server.listen(PORT, () => {
-  console.log("Server is running on 8000");
+  console.log("Server is running on 8000"); 
 });

@@ -62,6 +62,7 @@ export const saveMessage = async (
   senderId: string,
   receiverId: string,
   content: string,
+  isMedia:boolean
 ) => {
   try {
  
@@ -73,6 +74,7 @@ await prisma.messages.create({
         receiverId: receiverId,
         content: content,
         chatId: chat.id,
+        isMedia:isMedia
       },
     });
     return true;

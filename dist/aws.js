@@ -43,4 +43,22 @@ app.post("/get-presigned-url-s3", (req, res) => __awaiter(void 0, void 0, void 0
         });
     }
 }));
+app.post("/get-presigned-url-s3-media", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const command = new client_s3_1.PutObjectCommand({
+            Bucket: "chat-app-bucket47",
+            Key: `media-images/${Date.now()}-${"media"}`,
+            ContentType: "jpeg",
+        });
+        const url = yield (0, s3_request_presigner_1.getSignedUrl)(s3, command, { expiresIn: 60 });
+        res.status(200).json({
+            url
+        });
+    }
+    catch (error) {
+        res.status(500).json({
+            message: "Internal server error"
+        });
+    }
+}));
 exports.default = app;

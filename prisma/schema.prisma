@@ -38,6 +38,7 @@ model Messages {
   chatId      String
   chat      Chat     @relation(fields: [chatId], references: [id])
   deletedBy DeletedMessage[]
+  isMedia Boolean @default(false)
 } 
 
 model Chat {
