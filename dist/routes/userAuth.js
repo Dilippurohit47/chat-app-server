@@ -17,8 +17,35 @@ const prisma_1 = require("../utils/prisma");
 const helper_1 = require("../utils/helper");
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const zod_1 = require("../types/zod");
-const redis_1 = __importDefault(require("../redis/redis"));
+// import redis from "../redis/redis"
 const app = express_1.default.Router();
+const authMiddleware = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const cookie = req.cookies["chat-token"];
+        if (!cookie) {
+            return res.status(404).json({
+                message: "Please login first",
+            });
+        }
+        const decoded = jsonwebtoken_1.default.verify(cookie, process.env.JWT_SECRET);
+        if (!decoded) {
+            res.status(403).json({
+                success: false,
+                message: "Unauthorized"
+            });
+            return;
+        }
+        req.user = decoded;
+        next();
+    }
+    catch (error) {
+        console.log(error);
+        res.status(500).json({
+            succcess: false,
+            message: "Internal server error"
+        });
+    }
+});
 app.post("/sign-in", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { email, password } = req.body;
@@ -33,6 +60,12 @@ app.post("/sign-in", (req, res) => __awaiter(void 0, void 0, void 0, function* (
             where: {
                 email: email,
             },
+            select: {
+                id: true,
+                profileUrl: true,
+                name: true,
+                password: true,
+            }
         });
         if (!user) {
             res.status(404).json({
@@ -41,12 +74,21 @@ app.post("/sign-in", (req, res) => __awaiter(void 0, void 0, void 0, function* (
             return;
         }
         if ((user === null || user === void 0 ? void 0 : user.password) !== password) {
+            console.log(user.p);
             res.status(403).json({
                 message: "Password or email is incorrect",
             });
             return;
         }
         const token = (0, helper_1.sendToken)(res, user);
+        yield prisma_1.prisma.user.update({
+            where: {
+                id: user.id
+            },
+            data: {
+                refreshToken: token
+            },
+        });
         res.status(200).json({
             message: "Login successfull",
             token: token,
@@ -104,32 +146,55 @@ app.post("/sign-up", (req, res) => __awaiter(void 0, void 0, void 0, function* (
         });
     }
 }));
-app.get("/get-user", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const verifyAccessToken = (req, res, next) => {
     try {
-        const cookie = req.cookies["chat-token"];
-        if (!cookie) {
-            return res.status(404).json({
-                message: "Please login first",
-            });
+        const authHeader = req.headers["authorization"];
+        if (!authHeader) {
+            return res.status(401).json({ message: "Access token missing" });
         }
-        const decoded = jsonwebtoken_1.default.verify(cookie, process.env.JWT_SECRET);
-        const cachedUser = yield redis_1.default.get(`user:${decoded.id}`);
-        if (cachedUser) {
-            res.status(200).json(JSON.parse(cachedUser));
-            return;
+        const token = authHeader.split(" ")[1];
+        if (!token) {
+            return res.status(401).json({ message: "Invalid authorization header" });
         }
+        jsonwebtoken_1.default.verify(token, helper_1.JWT_PASSWORD, (err, decoded) => {
+            if (err) {
+                console.log(err);
+                return res.status(403).json({ message: "Invalid or expired token" });
+            }
+            const currentTime = Math.floor(Date.now() / 1000); // in seconds
+            const timeRemaining = decoded.exp - currentTime;
+            req.user = decoded;
+            next();
+        });
+    }
+    catch (err) {
+        return res.status(500).json({ message: "Server error" });
+    }
+};
+app.get("/get-user", verifyAccessToken, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const userId = req.user.id;
+        // const cachedUser = await redis.get(`user:${userId}`)
+        // if(cachedUser){
+        //   res.status(200).json(JSON.parse(cachedUser))
+        //   return 
+        // }
         const user = yield prisma_1.prisma.user.findUnique({
             where: {
-                id: decoded.id,
+                id: userId,
             },
+            select: {
+                profileUrl: true,
+                name: true,
+                id: true,
+            }
         });
         if (!user) {
             return res.status(404).json({ message: "User not found" });
         }
-        yield redis_1.default.set(`user:${user.id}`, JSON.stringify(user), {
-            EX: 3600
-        });
-        res.status(200).json(user);
+        // await redis.set(`user:${user.id}`,JSON.stringify(user),{
+        //   EX:3600})
+        res.status(200).json({ user });
     }
     catch (error) {
         console.error("Error fetching user:", error);
@@ -155,6 +220,45 @@ app.get("/all-users", (req, res) => __awaiter(void 0, void 0, void 0, function* 
         res.status(500).json({
             message: "Internal server error",
         });
+    }
+}));
+app.get('/refresh', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const token = req.cookies["chat-token"];
+    try {
+        if (!token) {
+            res.status(403).json({
+                message: "Unauthorized"
+            });
+            return;
+        }
+        const user = yield prisma_1.prisma.user.findUnique({
+            where: {
+                refreshToken: token
+            }
+        });
+        if (!user)
+            return res.status(403).json({ message: "Invalid refresh token" });
+        const accessToken = jsonwebtoken_1.default.sign({ id: user.id }, helper_1.JWT_PASSWORD, {
+            expiresIn: "1m"
+        });
+        console.log("im refresh token and my token is ", accessToken);
+        res.status(200).json({
+            accessToken
+        });
+    }
+    catch (error) {
+        console.log("error in generating accesstoken", error);
+        res.status(500).json({
+            message: "Internal server error"
+        });
+    }
+}));
+app.get("/checking", verifyAccessToken, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        res.json();
+    }
+    catch (error) {
+        console.log(error);
     }
 }));
 app.post("/sign-out", (req, res) => {

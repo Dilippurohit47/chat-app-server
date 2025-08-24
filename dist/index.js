@@ -55,11 +55,11 @@ const redis_1 = __importDefault(require("./redis/redis"));
 const messages_1 = __importStar(require("./routes/messages"));
 const chat_1 = __importDefault(require("./routes/chat"));
 const cookie_parser_1 = __importDefault(require("cookie-parser"));
-const messages_2 = require("./routes/messages");
+// import { saveMessage } from "./routes/messages";
 const aws_1 = __importDefault(require("./aws"));
 const group_1 = __importDefault(require("./routes/group"));
-const publisherRedis_1 = __importDefault(require("./publisherRedis"));
-const subsciberRedis_1 = __importStar(require("./subsciberRedis"));
+// import publisher from "./publisherRedis";
+// import subscriber, { connectSubscriber } from "./subsciberRedis";
 const app = (0, express_1.default)();
 app.use(express_1.default.json());
 app.use((0, cors_1.default)({
@@ -79,163 +79,173 @@ app.use("/aws", aws_1.default);
 app.use("/group", group_1.default);
 app.use("/chat-setting", chat_1.default);
 const usersMap = new Map();
-const subscribeToChannel = () => __awaiter(void 0, void 0, void 0, function* () {
-    yield (0, subsciberRedis_1.connectSubscriber)();
-});
-subscribeToChannel();
+// const subscribeToChannel = async () => {
+//   await connectSubscriber();
+// };
+// subscribeToChannel(); 
 app.get("/", (req, res) => {
     res.send("server is live");
 });
-const subscribe = () => __awaiter(void 0, void 0, void 0, function* () {
-    yield subsciberRedis_1.default.subscribe("messages", (msg) => __awaiter(void 0, void 0, void 0, function* () {
-        const data = JSON.parse(msg.toString());
-        if (data.type === "personal-msg") {
-            const receiverId = data.receiverId;
-            if (usersMap.has(receiverId)) {
-                let { ws } = usersMap.get(receiverId);
-                ws.send(JSON.stringify({
-                    type: "personal-msg",
-                    message: data.message,
-                    receiverId: receiverId,
-                    senderId: data.senderId,
-                    isMedia: data.isMedia || false
-                }));
-            }
-            if (data.senderId || receiverId || data.message) {
-                yield (0, messages_2.saveMessage)(data.senderId, receiverId, data.message, data.isMedia);
-                const senderRecentChats = yield (0, messages_1.sendRecentChats)(data.senderId);
-                const receiverRecentChats = yield (0, messages_1.sendRecentChats)(data.receiverId);
-                if (usersMap.has(data.senderId)) {
-                    let senderWs = usersMap.get(data.senderId).ws;
-                    if (senderWs && senderWs.readyState === 1) {
-                        senderWs.send(JSON.stringify({
-                            type: "recent-chats",
-                            chats: senderRecentChats,
-                        }));
-                    }
-                }
-                if (usersMap.has(receiverId)) {
-                    let receiverWs = usersMap.get(receiverId).ws;
-                    if (receiverWs && receiverWs.readyState === 1) {
-                        receiverWs.send(JSON.stringify({
-                            type: "recent-chats",
-                            chats: receiverRecentChats,
-                        }));
-                    }
-                    else {
-                        console.log(`❌ WebSocket not open for receiver (${receiverId})`);
-                    }
-                }
-            }
-        }
-        if (data.type === "group-message") {
-            const groupId = data.groupId;
-            const groupMembers = yield prisma_1.prisma.group.findFirst({
-                where: {
-                    id: groupId,
-                },
-                include: {
-                    members: {
-                        select: {
-                            userId: true,
-                        },
-                    },
-                },
-            });
-            groupMembers === null || groupMembers === void 0 ? void 0 : groupMembers.members.map((user) => {
-                var _a;
-                if (user.userId === data.message.senderId) {
-                    return;
-                }
-                const ws = (_a = usersMap.get(user.userId)) === null || _a === void 0 ? void 0 : _a.ws;
-                if (ws) {
-                    ws === null || ws === void 0 ? void 0 : ws.send(JSON.stringify({
-                        type: "group-message",
-                        content: data.message.content,
-                        senderId: data.message.senderId,
-                    }));
-                }
-            });
-        }
-        if (data.type === "send-groups") {
-            const userId = data.userId;
-            const groups = yield prisma_1.prisma.group.findMany({
-                where: {
-                    members: {
-                        some: {
-                            userId: userId,
-                        },
-                    },
-                    deletedby: {
-                        none: {
-                            userId: userId,
-                        },
-                    },
-                },
-                include: {
-                    members: {
-                        include: {
-                            user: true,
-                        },
-                    },
-                },
-            });
-            if (groups.length <= 0) {
-                const { ws } = usersMap.get(userId);
-                if (ws) {
-                    ws.send(JSON.stringify({
-                        type: "get-groups-ws",
-                        groups: [],
-                    }));
-                }
-                return;
-            }
-            if (groups.length > 0) {
-                const userIds = groups
-                    .map((group) => { var _a; return (_a = group.members) === null || _a === void 0 ? void 0 : _a.map((user) => user.userId); })
-                    .flatMap((id) => id);
-                userIds.map((id) => {
-                    if (usersMap.has(id)) {
-                        const ws = usersMap.get(id).ws;
-                        const getPerUserGroup = () => __awaiter(void 0, void 0, void 0, function* () {
-                            const group = yield prisma_1.prisma.group.findMany({
-                                where: {
-                                    members: {
-                                        some: {
-                                            userId: id,
-                                        },
-                                    },
-                                    deletedby: {
-                                        none: {
-                                            userId: id,
-                                        },
-                                    },
-                                },
-                                include: {
-                                    members: {
-                                        include: {
-                                            user: true,
-                                        },
-                                    },
-                                },
-                            });
-                            ws.send(JSON.stringify({
-                                type: "get-groups-ws",
-                                groups: group,
-                            }));
-                        });
-                        getPerUserGroup();
-                    }
-                });
-            }
-        }
-    }));
-});
-subscribe();
+// const subscribe = async () => {
+//   await subscriber.subscribe("messages", async (msg) => {
+//     const data = JSON.parse(msg.toString());
+//     if (data.type === "personal-msg") {
+//       const receiverId = data.receiverId;
+//       if (usersMap.has(receiverId)) {
+//         let { ws } = usersMap.get(receiverId);
+//         ws.send(
+//           JSON.stringify({
+//             type: "personal-msg",
+//             message: data.message,
+//             receiverId: receiverId,
+//             senderId: data.senderId,
+//             isMedia:data.isMedia || false
+//           })
+//         );
+//       }
+//       if (data.senderId || receiverId || data.message) {
+//         await saveMessage(data.senderId, receiverId, data.message, data.isMedia);
+//         const senderRecentChats = await sendRecentChats(data.senderId);
+//         const receiverRecentChats = await sendRecentChats(data.receiverId);
+//         if (usersMap.has(data.senderId)) {
+//           let senderWs = usersMap.get(data.senderId).ws;
+//           if (senderWs && senderWs.readyState === 1) {
+//             senderWs.send(
+//               JSON.stringify({
+//                 type: "recent-chats",
+//                 chats: senderRecentChats,
+//               })
+//             );
+//           }
+//         }
+//         if (usersMap.has(receiverId)) {
+//           let receiverWs = usersMap.get(receiverId).ws;
+//           if (receiverWs && receiverWs.readyState === 1) {
+//             receiverWs.send(
+//               JSON.stringify({
+//                 type: "recent-chats",
+//                 chats: receiverRecentChats,
+//               })
+//             );
+//           } else {
+//             console.log(`❌ WebSocket not open for receiver (${receiverId})`);
+//           }
+//         }
+//       }
+//     }
+//     if (data.type === "group-message") {
+//       const groupId = data.groupId;
+//       const groupMembers = await prisma.group.findFirst({
+//         where: {
+//           id: groupId,
+//         },
+//         include: {
+//           members: {
+//             select: {
+//               userId: true,
+//             },
+//           },
+//         },
+//       });
+//       groupMembers?.members.map((user) => {
+//         if (user.userId === data.message.senderId) {
+//           return;
+//         }
+//         const ws = usersMap.get(user.userId)?.ws;
+//         if (ws) {
+//           ws?.send(
+//             JSON.stringify({
+//               type: "group-message",
+//               content: data.message.content,
+//               senderId: data.message.senderId,
+//             })
+//           );
+//         }
+//       });
+//     }
+//     if (data.type === "send-groups") {
+//       const userId = data.userId;
+//       const groups = await prisma.group.findMany({
+//         where: {
+//           members: {
+//             some: {
+//               userId: userId,
+//             },
+//           },
+//           deletedby: {
+//             none: {
+//               userId: userId,
+//             },
+//           },
+//         },
+//         include: {
+//           members: {
+//             include: {
+//               user: true,
+//             },
+//           },
+//         },
+//       });
+//       if (groups.length <= 0) {
+//         const { ws } = usersMap.get(userId);
+//         if (ws) {
+//           ws.send(
+//             JSON.stringify({
+//               type: "get-groups-ws",
+//               groups: [],
+//             })
+//           );
+//         }
+//         return;
+//       }
+//       if (groups.length > 0) {
+//         const userIds = groups
+//           .map((group) => group.members?.map((user) => user.userId))
+//           .flatMap((id) => id);
+//         userIds.map((id) => {
+//           if (usersMap.has(id)) {
+//             const ws = usersMap.get(id).ws;
+//             const getPerUserGroup = async () => {
+//               const group = await prisma.group.findMany({
+//                 where: {
+//                   members: {
+//                     some: {
+//                       userId: id,
+//                     },
+//                   },
+//                   deletedby: {
+//                     none: {
+//                       userId: id,
+//                     },
+//                   },
+//                 },
+//                 include: {
+//                   members: {
+//                     include: {
+//                       user: true,
+//                     },
+//                   },
+//                 },
+//               });
+//               ws.send(
+//                 JSON.stringify({
+//                   type: "get-groups-ws",
+//                   groups: group,
+//                 })
+//               );
+//             };
+//             getPerUserGroup();
+//           }
+//         });
+//       }
+//     }
+//   });
+// };
+// subscribe();
 wss.on("connection", (ws, req) => __awaiter(void 0, void 0, void 0, function* () {
     ws.on("message", (m) => __awaiter(void 0, void 0, void 0, function* () {
         var _a;
-        yield publisherRedis_1.default.publish("messages", m.toString());
+        // await publisher.publish("messages", m.toString());
         const data = JSON.parse(m.toString());
         if (data.type === "user-info") {
             const user = yield prisma_1.prisma.user.findUnique({

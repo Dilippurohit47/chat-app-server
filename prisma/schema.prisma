@@ -26,6 +26,8 @@ model User {
   groupMemberships GroupMember[]   
   groupMessages    GroupMessage[]  
   deletedGroup DeletedGroup[]
+  refreshToken String? @unique
+  tokenExpiresIn DateTime?
 }
 model Messages {
   id          String   @id @default(uuid())
