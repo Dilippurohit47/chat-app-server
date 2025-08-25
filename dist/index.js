@@ -234,17 +234,15 @@ const subscribe = () => __awaiter(void 0, void 0, void 0, function* () {
 subscribe();
 wss.on("connection", (ws, req) => __awaiter(void 0, void 0, void 0, function* () {
     ws.on("message", (m) => __awaiter(void 0, void 0, void 0, function* () {
-        var _a;
+        var _a, _b, _c;
         yield publisherRedis_1.default.publish("messages", m.toString());
         const data = JSON.parse(m.toString());
-        console.log(data);
         if (data.type === "user-info") {
             const user = yield prisma_1.prisma.user.findUnique({
                 where: {
                     id: data.userId,
                 },
             });
-            console.log("user from first", user);
             if (user) {
                 usersMap.set(user.id, { ws, userInfo: user });
                 const onlineUsers = Array.from(usersMap.entries()).map((_a) => __awaiter(void 0, [_a], void 0, function* ([userId, userObj]) {
@@ -263,6 +261,24 @@ wss.on("connection", (ws, req) => __awaiter(void 0, void 0, void 0, function* ()
                 type: "recent-chats",
                 chats: recentChats,
             }));
+        }
+        if (data.type === "typing") {
+            const ws = (_b = usersMap.get(data.receiverId)) === null || _b === void 0 ? void 0 : _b.ws;
+            if (ws) {
+                ws.send(JSON.stringify({
+                    type: "user-is-typing",
+                    senderId: data.senderId
+                }));
+            }
+        }
+        if (data.type === "typing-stop") {
+            const ws = (_c = usersMap.get(data.receiverId)) === null || _c === void 0 ? void 0 : _c.ws;
+            if (ws) {
+                ws.send(JSON.stringify({
+                    type: "user-stopped-typing",
+                    senderId: data.senderId
+                }));
+            }
         }
     }));
     ws.on("close", () => __awaiter(void 0, void 0, void 0, function* () {

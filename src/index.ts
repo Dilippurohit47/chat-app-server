@@ -213,7 +213,6 @@ wss.on("connection", async (ws, req) => {
   ws.on("message", async (m) => {
     await publisher.publish("messages", m.toString());
     const data = JSON.parse(m.toString());
-    console.log(data)
     if (data.type === "user-info") {
       const user = await prisma.user.findUnique({
         where: {
@@ -221,7 +220,6 @@ wss.on("connection", async (ws, req) => {
         }, 
       });
 
-      console.log("user from first",user)
 
       if (user) {
         usersMap.set(user.id, { ws, userInfo: user });
@@ -252,6 +250,24 @@ wss.on("connection", async (ws, req) => {
           chats: recentChats,
         })
       );
+    }
+    if(data.type === "typing"){
+      const ws = usersMap.get(data.receiverId)?.ws
+      if(ws){
+        ws.send(JSON.stringify({
+          type:"user-is-typing",
+          senderId:data.senderId
+        }))
+      }
+    }
+    if(data.type === "typing-stop"){
+      const ws = usersMap.get(data.receiverId)?.ws
+      if(ws){
+        ws.send(JSON.stringify({
+          type:"user-stopped-typing",
+          senderId:data.senderId
+        }))
+      }
     }
   });
 
