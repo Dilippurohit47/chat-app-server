@@ -3,7 +3,7 @@ import { prisma } from "../utils/prisma";
 import { formatZodError, JWT_PASSWORD, sendToken } from "../utils/helper";
 import jwt from "jsonwebtoken";
 import { singnUpSchema } from "../types/zod";
-// import redis from "../redis/redis"
+import redis from "../redis/redis"
 
 const app = express.Router();
 
@@ -39,7 +39,6 @@ res.status(403).json({
 app.post("/sign-in", async (req, res) => {
   try {
     const { email, password } = req.body;
-    console.log(email, password);
     if (!email || !password) {
       res.status(404).json({
         message: "Please Fill all fields",
@@ -73,7 +72,6 @@ app.post("/sign-in", async (req, res) => {
     }
 
     const token = sendToken(res, user);
-
     await prisma.user.update({
       where:{
         id:user.id
@@ -176,13 +174,12 @@ const verifyAccessToken = (req, res, next) => {
 
 app.get("/get-user", verifyAccessToken,async (req, res) => {
   try {
-
 const userId = req.user.id
-// const cachedUser = await redis.get(`user:${userId}`)
-// if(cachedUser){
-//   res.status(200).json(JSON.parse(cachedUser))
-//   return 
-// }
+const cachedUser = await redis.get(`user:${userId}`)
+if(cachedUser){
+  res.status(200).json({user:JSON.parse(cachedUser)})
+  return 
+}
     const user = await prisma.user.findUnique({
       where: {
         id: userId,
@@ -196,9 +193,10 @@ const userId = req.user.id
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
-// await redis.set(`user:${user.id}`,JSON.stringify(user),{
-//   EX:3600})
-    res.status(200).json({user}
+await redis.set(`user:${user.id}`,JSON.stringify(user),{
+  EX:3600})
+
+    res.status(200).json({user:user, message:"user fetched"}
     );
   } catch (error) {
     console.error("Error fetching user:", error);
@@ -239,16 +237,26 @@ app.get('/refresh',async(req,res) =>{
       return  
     }
 
-    const  user = await prisma.user.findUnique({ 
+    const  user = await prisma.user.findUnique({  
       where:{
         refreshToken:token
       }
     })
+
+    try {
+      jwt.verify(user.refreshToken, JWT_PASSWORD);
+    } catch (err) {
+      res.clearCookie("chat-token", {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+      });
+      return res.status(403).json({ message: "Refresh token expired, please login again" });
+    }
+
     if (!user) return res.status(403).json({ message: "Invalid refresh token" });
          const accessToken = jwt.sign({id:user.id},JWT_PASSWORD,{
-      expiresIn:"1m"
+      expiresIn:"15m"
     })
-     console.log("im refresh token and my token is ",accessToken)
 
     res.status(200).json({
       accessToken 

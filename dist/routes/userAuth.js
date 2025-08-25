@@ -17,7 +17,7 @@ const prisma_1 = require("../utils/prisma");
 const helper_1 = require("../utils/helper");
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const zod_1 = require("../types/zod");
-// import redis from "../redis/redis"
+const redis_1 = __importDefault(require("../redis/redis"));
 const app = express_1.default.Router();
 const authMiddleware = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
@@ -49,7 +49,6 @@ const authMiddleware = (req, res, next) => __awaiter(void 0, void 0, void 0, fun
 app.post("/sign-in", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { email, password } = req.body;
-        console.log(email, password);
         if (!email || !password) {
             res.status(404).json({
                 message: "Please Fill all fields",
@@ -174,11 +173,11 @@ const verifyAccessToken = (req, res, next) => {
 app.get("/get-user", verifyAccessToken, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const userId = req.user.id;
-        // const cachedUser = await redis.get(`user:${userId}`)
-        // if(cachedUser){
-        //   res.status(200).json(JSON.parse(cachedUser))
-        //   return 
-        // }
+        const cachedUser = yield redis_1.default.get(`user:${userId}`);
+        if (cachedUser) {
+            res.status(200).json({ user: JSON.parse(cachedUser) });
+            return;
+        }
         const user = yield prisma_1.prisma.user.findUnique({
             where: {
                 id: userId,
@@ -192,9 +191,10 @@ app.get("/get-user", verifyAccessToken, (req, res) => __awaiter(void 0, void 0, 
         if (!user) {
             return res.status(404).json({ message: "User not found" });
         }
-        // await redis.set(`user:${user.id}`,JSON.stringify(user),{
-        //   EX:3600})
-        res.status(200).json({ user });
+        yield redis_1.default.set(`user:${user.id}`, JSON.stringify(user), {
+            EX: 3600
+        });
+        res.status(200).json({ user: user, message: "user fetched" });
     }
     catch (error) {
         console.error("Error fetching user:", error);
@@ -236,12 +236,21 @@ app.get('/refresh', (req, res) => __awaiter(void 0, void 0, void 0, function* ()
                 refreshToken: token
             }
         });
+        try {
+            jsonwebtoken_1.default.verify(user.refreshToken, helper_1.JWT_PASSWORD);
+        }
+        catch (err) {
+            res.clearCookie("chat-token", {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === "production",
+            });
+            return res.status(403).json({ message: "Refresh token expired, please login again" });
+        }
         if (!user)
             return res.status(403).json({ message: "Invalid refresh token" });
         const accessToken = jsonwebtoken_1.default.sign({ id: user.id }, helper_1.JWT_PASSWORD, {
-            expiresIn: "1m"
+            expiresIn: "15m"
         });
-        console.log("im refresh token and my token is ", accessToken);
         res.status(200).json({
             accessToken
         });
