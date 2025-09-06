@@ -24,7 +24,7 @@ app.use(
     origin: [
       "http://localhost:5173", 
       "https://chat-app-client-tawny.vercel.app",
-    ], 
+    ],  
     credentials: true,
     methods: ["GET", "POST", "PUT", "OPTIONS", "DELETE"],
   })
@@ -281,8 +281,8 @@ for(const id of connectedUsers){
   });
 });
 
-const PORT = process.env.PORT || 8000;
+const PORT = process.env.PORT ;
 
 server.listen(PORT, () => {
-  console.log("Server is running on 8000"); 
+  console.log(`Server is running on ${PORT}`); 
 });
