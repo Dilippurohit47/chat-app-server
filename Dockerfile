@@ -7,9 +7,10 @@ RUN npm install --include=dev
 
 COPY . .
 
-# RUN npm run build
-# RUN npx prisma migrate deploy
+RUN npm run build
+RUN npx prisma generate
+RUN npx prisma migrate deploy
 
-EXPOSE 5000
+EXPOSE 8000
 
-CMD ["npm", "start",]
+CMD ["npm", "start"]
