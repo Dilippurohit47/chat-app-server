@@ -8,11 +8,16 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.connectSubscriber = connectSubscriber;
 const redis_1 = require("redis");
+const dotenv_1 = __importDefault(require("dotenv"));
+dotenv_1.default.config();
 const subscriber = (0, redis_1.createClient)({
-    url: "redis://localhost:6379",
+    url: process.env.REDIS_URL
 });
 subscriber.on("connect", () => {
     console.log("Subscriber connected");

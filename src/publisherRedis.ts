@@ -1,7 +1,9 @@
 import {createClient ,RedisClientType } from "redis"
+import dotenv from "dotenv"
+dotenv.config()
 
   const publsiher:RedisClientType  =  createClient({
-    url:"redis://localhost:6379"
+    url:process.env.REDIS_URL
 })
 
 publsiher.on("error" , (error)=> {console.log(error)})
