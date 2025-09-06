@@ -73,7 +73,6 @@ app.post("/sign-in", (req, res) => __awaiter(void 0, void 0, void 0, function* (
             return;
         }
         if ((user === null || user === void 0 ? void 0 : user.password) !== password) {
-            console.log(user.p);
             res.status(403).json({
                 message: "Password or email is incorrect",
             });

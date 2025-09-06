@@ -245,10 +245,10 @@ wss.on("connection", (ws, req) => __awaiter(void 0, void 0, void 0, function* ()
             });
             if (user) {
                 usersMap.set(user.id, { ws, userInfo: user });
-                const onlineUsers = Array.from(usersMap.entries()).map((_a) => __awaiter(void 0, [_a], void 0, function* ([userId, userObj]) {
-                    yield redis_1.default.sAdd("online-users", userId);
-                    return Object.assign({ userId }, userObj.userInfo);
-                }));
+                const connectedUsers = Array.from(usersMap.keys());
+                for (const id of connectedUsers) {
+                    yield redis_1.default.sAdd("online-users", id);
+                }
                 const onlineMembers = yield redis_1.default.sMembers("online-users");
                 wss.clients.forEach((c) => {
                     c.send(JSON.stringify({ type: "online-users", onlineUsers: onlineMembers }));

@@ -64,7 +64,6 @@ app.post("/sign-in", async (req, res) => {
       return;
     }
     if (user?.password !== password) {
-      console.log(user.p)
       res.status(403).json({
         message: "Password or email is incorrect",
       });
@@ -79,7 +78,7 @@ app.post("/sign-in", async (req, res) => {
       data:{
         refreshToken:token
       },
-    })
+    }) 
 
     res.status(200).json({
       message: "Login successfull",

@@ -10,7 +10,7 @@ subscriber.on("connect", () => {
 
 subscriber.on("error", (err) => {
   console.error("Redis Subscriber Error:", err);
-});
+}); 
  
 
 

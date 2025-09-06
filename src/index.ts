@@ -208,7 +208,6 @@ const subscribe = async () => {
   });
 };
 subscribe();
-
 wss.on("connection", async (ws, req) => {
   ws.on("message", async (m) => {
     await publisher.publish("messages", m.toString());
@@ -223,18 +222,12 @@ wss.on("connection", async (ws, req) => {
 
       if (user) {
         usersMap.set(user.id, { ws, userInfo: user });
-        const onlineUsers = Array.from(usersMap.entries()).map(
-          async([userId, userObj]) => { 
-            await redis.sAdd("online-users", userId);
-            return {
-              userId,
-              ...userObj.userInfo,
-            };
-          }
-        );
-
+  
+        const connectedUsers= Array.from(usersMap.keys())
+for(const id of connectedUsers){ 
+          await redis.sAdd("online-users",id)
+}
         const onlineMembers = await redis.sMembers("online-users")
-
         wss.clients.forEach((c) => {
           c.send(
             JSON.stringify({ type: "online-users", onlineUsers: onlineMembers })
