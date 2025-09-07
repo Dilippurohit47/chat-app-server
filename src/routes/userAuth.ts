@@ -1,14 +1,23 @@
-import express, { Request, Response } from "express";
+import express, { NextFunction, Request, Response } from "express";
 import { prisma } from "../utils/prisma";
 import { formatZodError, JWT_PASSWORD, sendToken } from "../utils/helper";
-import jwt from "jsonwebtoken";
+import jwt, { JwtPayload } from "jsonwebtoken";
 import { singnUpSchema } from "../types/zod";
 import redis from "../redis/redis"
 
 const app = express.Router();
 
 
-const authMiddleware = async(req,res,next) =>{
+type user = {
+  id:string
+}
+declare module "express-serve-static-core" {
+  interface Request {
+    user?: JwtPayload
+  }
+}
+
+const authMiddleware = async(req:Request,res:Response,next:NextFunction) =>{
   try {
       const cookie = req.cookies["chat-token"];
 
@@ -24,6 +33,10 @@ res.status(403).json({
   message:"Unauthorized"
 })
       return 
+    }
+
+    if(typeof decoded === "string"){
+      return
     }
     req.user = decoded
     next()
@@ -142,37 +155,48 @@ if(userExist){
 });
 
 
-const verifyAccessToken = (req, res, next) => {
+const verifyAccessToken = (req:Request, res:Response, next:NextFunction) => {
   try {
     const authHeader = req.headers["authorization"]; 
     if (!authHeader) {
-      return res.status(401).json({ message: "Access token missing" });
+       res.status(401).json({ message: "Access token missing" });
+       return
     }
 
     const token = authHeader.split(" ")[1]; 
 
     if (!token) {
-      return res.status(401).json({ message: "Invalid authorization header" });
+       res.status(401).json({ message: "Invalid authorization header" });
+       return
     } 
 
     jwt.verify(token, JWT_PASSWORD, (err, decoded) => {
       if (err) {
         console.log(err)
-        return res.status(403).json({ message: "Invalid or expired token" });
+         res.status(403).json({ message: "Invalid or expired token" });
+         return
       }
- const currentTime = Math.floor(Date.now() / 1000); // in seconds
-    const timeRemaining = decoded.exp - currentTime;
-
+ if(typeof decoded === "string"){
+  return
+ }
       req.user = decoded;
       next();
     }); 
   } catch (err) {
-    return res.status(500).json({ message: "Server error" });
+     res.status(500).json({ message: "Server error" });
+     return
   }
 };
 
-app.get("/get-user", verifyAccessToken,async (req, res) => {
+app.get("/get-user", verifyAccessToken,async (req:Request, res:Response) => {
   try {
+    if(!req.user){
+      res.status(404).json({
+        success:false,
+        message:"Authorization failed"
+      })
+      return
+    }
 const userId = req.user.id
 const cachedUser = await redis.get(`user:${userId}`)
 if(cachedUser){
@@ -190,7 +214,8 @@ if(cachedUser){
       } 
     }); 
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+       res.status(404).json({ message: "User not found" });
+       return
     }
 await redis.set(`user:${user.id}`,JSON.stringify(user),{
   EX:3600})
@@ -226,7 +251,7 @@ app.get("/all-users", async (req, res) => {
 });
 
 
-app.get('/refresh',async(req,res) =>{
+app.get('/refresh',async(req:Request,res:Response) =>{
   const token = req.cookies["chat-token"]
   try {
     if(!token){
@@ -241,6 +266,20 @@ app.get('/refresh',async(req,res) =>{
         refreshToken:token
       }
     })
+    if(!user){
+      res.status(401).json({
+        success:false,
+        message:"Unauthorized , Login first"
+      })
+      return
+    }
+    if(!user.refreshToken){
+      res.status(401).json({
+        success:false,
+        message:"Unauthorized"
+      })
+      return
+    }
 
     try {
       jwt.verify(user.refreshToken, JWT_PASSWORD);
@@ -249,10 +288,14 @@ app.get('/refresh',async(req,res) =>{
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
       });
-      return res.status(403).json({ message: "Refresh token expired, please login again" });
+       res.status(403).json({ message: "Refresh token expired, please login again" });
+       return
     }
 
-    if (!user) return res.status(403).json({ message: "Invalid refresh token" });
+    if (!user) 
+      {res.status(403).json({ message: "Invalid refresh token" });
+return
+  }
          const accessToken = jwt.sign({id:user.id},JWT_PASSWORD,{
       expiresIn:"15m"
     })
@@ -260,6 +303,7 @@ app.get('/refresh',async(req,res) =>{
     res.status(200).json({
       accessToken 
     })
+    return
   } catch (error) {
     console.log("error in generating accesstoken",error)
     res.status(500).json({

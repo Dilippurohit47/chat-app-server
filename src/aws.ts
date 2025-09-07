@@ -1,4 +1,4 @@
-import {S3Client, PutObjectCommand} from "@aws-sdk/client-s3"
+import {S3Client, PutObjectCommand, S3ClientConfigType} from "@aws-sdk/client-s3"
 import {getSignedUrl} from "@aws-sdk/s3-request-presigner"
 import dotenv from "dotenv"
 dotenv.config()
@@ -9,8 +9,8 @@ const app = express.Router()
 const s3 = new S3Client({
   region:process.env.AWS_REGION,
   credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY ,
-    secretAccessKey: process.env.AWS_SECRET_KEY,
+    accessKeyId: process.env.AWS_ACCESS_KEY!,
+    secretAccessKey: process.env.AWS_SECRET_KEY!,
   },
 }); 
 app.post("/get-presigned-url-s3",async(req,res) =>{

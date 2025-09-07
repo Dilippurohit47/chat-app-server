@@ -15,8 +15,8 @@ import express, { Request, Response } from "express";
       },
     });
 
+    const unreadCount = chat?.unreadCount as {unreadMessages : number}
 
-    console.log(chat)
     if (chat) {
       await prisma.chat.update({
         where: {
@@ -28,8 +28,8 @@ import express, { Request, Response } from "express";
           unreadCount: {
             userId: userId2,
             unreadMessages:
-              chat.unreadCount?.unreadMessages != null
-                ? chat.unreadCount.unreadMessages + 1
+              unreadCount?.unreadMessages != null
+                ? unreadCount.unreadMessages + 1
                 : 1,
           },
         },
@@ -68,6 +68,7 @@ export const saveMessage = async (
  
 const chat  = await upsertRecentChats(senderId,receiverId,content)
 
+if(!chat) return
 await prisma.messages.create({
       data: {
         senderId: senderId,
@@ -86,15 +87,30 @@ await prisma.messages.create({
 
 const app = express.Router();
 
-app.get("/get-messages", async (req: Request, res: Response) => {
+interface getMessagesBody {
+  senderId:string,
+  receiverId:string,
+  cursor:string
+}
+
+app.get("/get-messages", async (req: Request<{},{},getMessagesBody>, res: Response) => {
   try {
     const { senderId, receiverId, cursor } = req.query;
+
+   if(typeof receiverId !== "string"){
+    res.status(404).json({
+      success:false,
+      message:"Reciver id should be string"
+    })
+    return
+   }
     const limit = parseInt(req.query.limit as string) || 20;
     const cursorObj = cursor ? JSON.parse(cursor as string) : null;
     if (!senderId || !receiverId) {
-      return res
+       res
         .status(400)
         .json({ error: "senderId and receiverId are required" });
+        return
     }
 
     const messages = await prisma.messages.findMany({
@@ -142,7 +158,7 @@ app.get("/get-messages", async (req: Request, res: Response) => {
           none: {
             userId: receiverId,
           },
-        }, // Remove empty conditions if no cursor
+        }, 
       },
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       include: { sender: true, receiver: true },
@@ -269,7 +285,12 @@ app.get("/get-recent-chats", async (req, res) => {
   }
 });
 
-app.put("/update-unreadmessage-count", async (req, res) => {
+
+interface DeleteChatBody {
+  userId:string,
+  chatId:string,
+}
+app.put("/update-unreadmessage-count", async (req:Request<{},{},DeleteChatBody>, res:Response) => {
   try {
     const { userId, chatId } = req.body;
     const chat = await prisma.chat.findUnique({
@@ -277,7 +298,9 @@ app.put("/update-unreadmessage-count", async (req, res) => {
         id: chatId,
       },
     });
-    if (chat?.unreadCount?.userId === userId) {
+
+    const unreadCount = chat?.unreadCount as {userId:string} | null
+    if ( unreadCount && unreadCount.userId === userId) {
       await prisma.chat.update({
         where: {
           id: chatId,

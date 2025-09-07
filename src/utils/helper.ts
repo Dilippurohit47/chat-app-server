@@ -2,8 +2,9 @@ import JWT from "jsonwebtoken";
 import { Response } from "express"
 import { UserType } from "../types";
 import dotenv from "dotenv"
+import { ZodIssue } from "zod";
 dotenv.config()
-export const JWT_PASSWORD = process.env.JWT_SECRET;
+export const JWT_PASSWORD = process.env.JWT_SECRET || "123456";
 
 
 
@@ -35,7 +36,7 @@ if(!JWT_PASSWORD){
 };
 
 
-export const formatZodError = (issues) =>{
+export const formatZodError = (issues:ZodIssue[]) =>{
   const error = issues.map((firstError) =>{
     return firstError.message
   })

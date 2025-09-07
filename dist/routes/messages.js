@@ -16,7 +16,6 @@ exports.sendRecentChats = exports.saveMessage = exports.upsertRecentChats = void
 const prisma_1 = require("../utils/prisma");
 const express_1 = __importDefault(require("express"));
 const upsertRecentChats = (userId1, userId2, lastMessage) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a;
     try {
         let chat = yield prisma_1.prisma.chat.findFirst({
             where: {
@@ -26,7 +25,7 @@ const upsertRecentChats = (userId1, userId2, lastMessage) => __awaiter(void 0, v
                 ],
             },
         });
-        console.log(chat);
+        const unreadCount = chat === null || chat === void 0 ? void 0 : chat.unreadCount;
         if (chat) {
             yield prisma_1.prisma.chat.update({
                 where: {
@@ -37,8 +36,8 @@ const upsertRecentChats = (userId1, userId2, lastMessage) => __awaiter(void 0, v
                     lastMessageCreatedAt: new Date(),
                     unreadCount: {
                         userId: userId2,
-                        unreadMessages: ((_a = chat.unreadCount) === null || _a === void 0 ? void 0 : _a.unreadMessages) != null
-                            ? chat.unreadCount.unreadMessages + 1
+                        unreadMessages: (unreadCount === null || unreadCount === void 0 ? void 0 : unreadCount.unreadMessages) != null
+                            ? unreadCount.unreadMessages + 1
                             : 1,
                     },
                 },
@@ -72,6 +71,8 @@ exports.upsertRecentChats = upsertRecentChats;
 const saveMessage = (senderId, receiverId, content, isMedia) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const chat = yield (0, exports.upsertRecentChats)(senderId, receiverId, content);
+        if (!chat)
+            return;
         yield prisma_1.prisma.messages.create({
             data: {
                 senderId: senderId,
@@ -93,12 +94,20 @@ const app = express_1.default.Router();
 app.get("/get-messages", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { senderId, receiverId, cursor } = req.query;
+        if (typeof receiverId !== "string") {
+            res.status(404).json({
+                success: false,
+                message: "Reciver id should be string"
+            });
+            return;
+        }
         const limit = parseInt(req.query.limit) || 20;
         const cursorObj = cursor ? JSON.parse(cursor) : null;
         if (!senderId || !receiverId) {
-            return res
+            res
                 .status(400)
                 .json({ error: "senderId and receiverId are required" });
+            return;
         }
         const messages = yield prisma_1.prisma.messages.findMany({
             take: limit + 1,
@@ -145,7 +154,7 @@ app.get("/get-messages", (req, res) => __awaiter(void 0, void 0, void 0, functio
                     none: {
                         userId: receiverId,
                     },
-                }, // Remove empty conditions if no cursor
+                },
             },
             orderBy: [{ createdAt: "desc" }, { id: "desc" }],
             include: { sender: true, receiver: true },
@@ -263,7 +272,6 @@ app.get("/get-recent-chats", (req, res) => __awaiter(void 0, void 0, void 0, fun
     }
 }));
 app.put("/update-unreadmessage-count", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a;
     try {
         const { userId, chatId } = req.body;
         const chat = yield prisma_1.prisma.chat.findUnique({
@@ -271,7 +279,8 @@ app.put("/update-unreadmessage-count", (req, res) => __awaiter(void 0, void 0, v
                 id: chatId,
             },
         });
-        if (((_a = chat === null || chat === void 0 ? void 0 : chat.unreadCount) === null || _a === void 0 ? void 0 : _a.userId) === userId) {
+        const unreadCount = chat === null || chat === void 0 ? void 0 : chat.unreadCount;
+        if (unreadCount && unreadCount.userId === userId) {
             yield prisma_1.prisma.chat.update({
                 where: {
                     id: chatId,

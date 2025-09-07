@@ -12,6 +12,9 @@ try {
     }
 
    const user =  JWT.verify(token , process.env.JWT_SECRET!) 
+   if(typeof user === "string"){
+    return
+   }
    req.user = user
    next()
 } catch (error) {

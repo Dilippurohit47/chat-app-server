@@ -22,11 +22,11 @@ app.post("/create-group", (req, res) => __awaiter(void 0, void 0, void 0, functi
         const { name, members } = req.body;
         if (!name || members.length <= 0) {
             res.status(403).json({
-                message: "Missing elements required",
+                message: "Missing fields required",
             });
             return;
         }
-        const group = yield prisma_1.prisma.group.create({
+        yield prisma_1.prisma.group.create({
             data: {
                 name: name,
                 members: {
@@ -54,7 +54,6 @@ app.get("/", middlewares_1.authorizeToken, (req, res) => __awaiter(void 0, void 
     try {
         const userId = req.user.id;
         const cachedgroups = yield redis_1.default.get(`groupId:${userId}`);
-        console.log(cachedgroups);
         if (cachedgroups) {
             res.status(200).json({
                 groups: JSON.parse(cachedgroups),
@@ -84,11 +83,12 @@ app.get("/", middlewares_1.authorizeToken, (req, res) => __awaiter(void 0, void 
             },
         });
         yield redis_1.default.set(`groupId:${userId}`, JSON.stringify(groups), {
-            EX: '3600'
+            EX: 3600
         });
         res.status(200).json({
             groups: groups,
         });
+        return;
     }
     catch (error) {
         res.status(500).json({
@@ -101,11 +101,12 @@ app.post("/add-new-members", (req, res) => __awaiter(void 0, void 0, void 0, fun
     var _a;
     try {
         const { newMembers } = req.body;
-        const { groupId } = req.query;
+        const groupId = req.query.groupId;
         if (!groupId) {
             res.status(403).json({
                 message: "Group id is absent!",
             });
+            return;
         }
         const data = yield prisma_1.prisma.group.update({
             where: {
@@ -122,7 +123,6 @@ app.post("/add-new-members", (req, res) => __awaiter(void 0, void 0, void 0, fun
                 members: true
             }
         });
-        console.log(data);
         (_a = data === null || data === void 0 ? void 0 : data.members) === null || _a === void 0 ? void 0 : _a.forEach((member) => __awaiter(void 0, void 0, void 0, function* () {
             yield redis_1.default.del(`groupId:${member.userId}`);
         }));
@@ -143,9 +143,10 @@ app.delete("/delete-group/:groupId/:userId", (req, res) => __awaiter(void 0, voi
         const { groupId, userId } = req.params;
         if (!groupId || !userId) {
             console.log("user id and group id required for deleting group");
-            return res.status(403).json({
+            res.status(403).json({
                 message: "Insufficent credentials"
             });
+            return;
         }
         yield prisma_1.prisma.deletedGroup.create({
             data: {
@@ -155,6 +156,7 @@ app.delete("/delete-group/:groupId/:userId", (req, res) => __awaiter(void 0, voi
         });
         yield redis_1.default.del(`groupId:${userId}`);
         res.status(200).json({ success: true, message: "Group deleted successfully" });
+        return;
     }
     catch (error) {
         res.send(500);

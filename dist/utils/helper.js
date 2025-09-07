@@ -7,7 +7,7 @@ exports.formatZodError = exports.sendToken = exports.JWT_PASSWORD = void 0;
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const dotenv_1 = __importDefault(require("dotenv"));
 dotenv_1.default.config();
-exports.JWT_PASSWORD = process.env.JWT_SECRET;
+exports.JWT_PASSWORD = process.env.JWT_SECRET || "123456";
 const sendToken = (res, user) => {
     if (!res || !user) {
         console.error("response or user needed");

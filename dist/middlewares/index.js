@@ -16,6 +16,9 @@ const authorizeToken = (req, res, next) => {
             });
         }
         const user = jsonwebtoken_1.default.verify(token, process.env.JWT_SECRET);
+        if (typeof user === "string") {
+            return;
+        }
         req.user = user;
         next();
     }

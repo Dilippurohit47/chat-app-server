@@ -4,16 +4,17 @@ import { authorizeToken } from "../middlewares";
 import redis from "../redis/redis"
 const app = express.Router();
 
+
 app.post("/create-group", async (req: Request, res: Response) => {
   try {
     const { name, members }:{members:string[],name:string} = req.body;
     if (!name || members.length <= 0) {
       res.status(403).json({
-        message: "Missing elements required",
+        message: "Missing fields required",
       });
       return;
     }
-    const group = await prisma.group.create({
+     await prisma.group.create({
       data: {
         name: name,
         members: {
@@ -39,11 +40,8 @@ members.forEach( async(userId) =>{
 
 app.get("/", authorizeToken, async (req: Request, res: Response) => {
   try {
-
-    const userId = req.user.id;
-
+    const userId = req.user!.id;
     const cachedgroups = await redis.get(`groupId:${userId}`)
-console.log(cachedgroups)
     if(cachedgroups){
       res.status(200).json({
         groups:JSON.parse(cachedgroups),
@@ -76,12 +74,13 @@ console.log(cachedgroups)
     });
 
     await redis.set(`groupId:${userId}`,JSON.stringify(groups),{
-      EX:'3600'
+      EX:3600
     })
 
     res.status(200).json({
       groups: groups,
     });
+    return
   } catch (error) {
     res.status(500).json({
       message: "Internal server error",
@@ -90,14 +89,15 @@ console.log(cachedgroups)
   }
 });
 
-app.post("/add-new-members", async (req, res) => {
+app.post("/add-new-members", async (req:Request, res:Response) => {
   try {
     const { newMembers } = req.body;
-    const { groupId } = req.query;
+    const groupId = req.query.groupId as   string | undefined;
     if (!groupId) {
       res.status(403).json({
         message: "Group id is absent!",
       });
+      return
     }
     const data = await prisma.group.update({
       where: {
@@ -105,7 +105,7 @@ app.post("/add-new-members", async (req, res) => {
       },
       data: {
         members: {
-          create: newMembers.map((id) => ({
+          create: newMembers.map((id:string) => ({
             user: { connect: { id: id } },
           })),
         },
@@ -115,7 +115,6 @@ app.post("/add-new-members", async (req, res) => {
       }
     });   
 
-    console.log(data)
 
     data?.members?.forEach(async(member) =>{
 await redis.del(`groupId:${member.userId}`)
@@ -133,14 +132,15 @@ await redis.del(`groupId:${member.userId}`)
   }
 });
 
-app.delete("/delete-group/:groupId/:userId", async (req, res) => {
+app.delete("/delete-group/:groupId/:userId", async (req:Request, res:Response) => {
   try {
     const { groupId  ,userId} = req.params;
     if(!groupId || !userId){
       console.log("user id and group id required for deleting group")
-      return res.status(403).json({
+       res.status(403).json({
         message:"Insufficent credentials"
       })
+      return
     }
    
     await prisma.deletedGroup.create({
@@ -153,6 +153,7 @@ app.delete("/delete-group/:groupId/:userId", async (req, res) => {
     await redis.del(`groupId:${userId}`)
 
 res.status(200).json({ success: true, message: "Group deleted successfully" });
+return
   } catch (error) {
     res.send(500);
     console.log(error);

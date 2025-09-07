@@ -18,6 +18,12 @@ const app = express_1.default.Router();
 app.delete("/clear-chat", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { userId, chatId } = req.body;
+        if (!userId || !chatId) {
+            res.status(403).json({
+                message: "Missing fields required"
+            });
+            return;
+        }
         const messages = yield prisma_1.prisma.messages.findMany({
             where: { chatId: chatId },
             select: { id: true },
@@ -32,6 +38,7 @@ app.delete("/clear-chat", (req, res) => __awaiter(void 0, void 0, void 0, functi
         res.status(200).json({
             message: "Chat clear"
         });
+        return;
     }
     catch (error) {
         console.log("error while deleting chat", error);
@@ -43,20 +50,25 @@ app.delete("/clear-chat", (req, res) => __awaiter(void 0, void 0, void 0, functi
 app.delete("/delete-chat", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { userId, chatId } = req.body;
-        const chat = yield prisma_1.prisma.deletedChat.create({
+        if (!userId || !chatId) {
+            res.status(403).json({
+                message: "Missing fields required"
+            });
+            return;
+        }
+        yield prisma_1.prisma.deletedChat.create({
             data: {
                 chatId: chatId,
                 userId: userId,
             },
         });
-        console.log(chat);
-        return res.status(200).json({
+        res.status(200).json({
             message: "Deleted successfully"
         });
     }
     catch (error) {
         console.log(error);
-        return res.status(500).json({
+        res.status(500).json({
             message: "Internal server Error"
         });
     }
