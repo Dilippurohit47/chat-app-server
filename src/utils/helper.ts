@@ -25,10 +25,10 @@ if(!JWT_PASSWORD){
 
     res.cookie(cookieName, token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production", // Secure only in production
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", // "none" in prod, "lax" in dev
-      expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
-    });
+      secure: process.env.NODE_ENV === "production", 
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", 
+      expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        });
     return token
   } catch (err) {
     console.error("Error generating or sending token:", err);

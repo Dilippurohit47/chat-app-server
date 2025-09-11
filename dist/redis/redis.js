@@ -15,11 +15,29 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const redis_1 = require("redis");
 const dotenv_1 = __importDefault(require("dotenv"));
 dotenv_1.default.config();
-const redis = (0, redis_1.createClient)({
-    url: process.env.REDIS_URL
-});
+let redis;
+if (process.env.NODE_ENV === "production") {
+    redis = (0, redis_1.createClient)({
+        url: process.env.REDIS_URL,
+    });
+}
+else {
+    const mockStore = new Map();
+    redis = {
+        get: (k) => __awaiter(void 0, void 0, void 0, function* () { return mockStore.get(k); }),
+        set: (k, v) => __awaiter(void 0, void 0, void 0, function* () {
+            mockStore.set(k, v);
+            return "OK";
+        }),
+        publish: (ch, msg) => __awaiter(void 0, void 0, void 0, function* () { return console.log(`[MockPub] ${ch}: ${msg}`); }),
+        subscribe: (ch, cb) => __awaiter(void 0, void 0, void 0, function* () { return console.log(`[MockSub] ${ch}`); }),
+        on: () => { },
+        connect: () => __awaiter(void 0, void 0, void 0, function* () { }),
+        quit: () => __awaiter(void 0, void 0, void 0, function* () { }),
+    };
+}
 redis.on("error", (error) => {
-    // console.log("Error in main redis" ,error)
+    console.log("Error in main redis", error);
 });
 redis.on("ready", () => {
     console.log("main Redis is ready to use");

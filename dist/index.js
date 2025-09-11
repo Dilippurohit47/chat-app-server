@@ -51,7 +51,6 @@ const http_1 = __importDefault(require("http"));
 const cors_1 = __importDefault(require("cors"));
 const prisma_1 = require("./utils/prisma");
 const userAuth_1 = __importDefault(require("./routes/userAuth"));
-const redis_1 = __importDefault(require("./redis/redis"));
 const messages_1 = __importStar(require("./routes/messages"));
 const chat_1 = __importDefault(require("./routes/chat"));
 const cookie_parser_1 = __importDefault(require("cookie-parser"));
@@ -60,7 +59,10 @@ const aws_1 = __importDefault(require("./aws"));
 const group_1 = __importDefault(require("./routes/group"));
 const publisherRedis_1 = __importDefault(require("./publisherRedis"));
 const subsciberRedis_1 = __importStar(require("./subsciberRedis"));
+require("./utils/vector-db");
 const app = (0, express_1.default)();
+const aiChatBot_1 = require("./routes/aiChatBot");
+const vector_db_1 = require("./utils/vector-db");
 app.use(express_1.default.json());
 app.use((0, cors_1.default)({
     origin: [
@@ -234,7 +236,7 @@ const subscribe = () => __awaiter(void 0, void 0, void 0, function* () {
 subscribe();
 wss.on("connection", (ws, req) => __awaiter(void 0, void 0, void 0, function* () {
     ws.on("message", (m) => __awaiter(void 0, void 0, void 0, function* () {
-        var _a, _b, _c;
+        var _a, _b, _c, _d;
         yield publisherRedis_1.default.publish("messages", m.toString());
         const data = JSON.parse(m.toString());
         if (data.type === "user-info") {
@@ -247,9 +249,10 @@ wss.on("connection", (ws, req) => __awaiter(void 0, void 0, void 0, function* ()
                 usersMap.set(user.id, { ws, userInfo: user });
                 const connectedUsers = Array.from(usersMap.keys());
                 for (const id of connectedUsers) {
-                    yield redis_1.default.sAdd("online-users", id);
+                    // await redis.sAdd("online-users",id)
                 }
-                const onlineMembers = yield redis_1.default.sMembers("online-users");
+                // const onlineMembers = await redis.sMembers("online-users")
+                const onlineMembers = [];
                 wss.clients.forEach((c) => {
                     c.send(JSON.stringify({ type: "online-users", onlineUsers: onlineMembers }));
                 });
@@ -280,21 +283,36 @@ wss.on("connection", (ws, req) => __awaiter(void 0, void 0, void 0, function* ()
                 }));
             }
         }
+        if (data.type === "get-chatbot-response") {
+            const query = data.query;
+            const ws = (_d = usersMap.get(data === null || data === void 0 ? void 0 : data.receiverId)) === null || _d === void 0 ? void 0 : _d.ws;
+            const personalData = yield (0, vector_db_1.getInfoFromCollection)(query);
+            console.log("personal data", personalData);
+            const answer = yield (0, aiChatBot_1.getChatBotResponse)(query || "hello", personalData);
+            if (ws) {
+                ws.send(JSON.stringify({
+                    type: "chatbot-reply",
+                    answer: answer,
+                    receiverId: data.receiverId,
+                }));
+            }
+        }
     }));
     ws.on("close", () => __awaiter(void 0, void 0, void 0, function* () {
         var _a;
         const userId = (_a = Array.from(usersMap.entries()).find(([id, socket]) => socket.ws === ws)) === null || _a === void 0 ? void 0 : _a[0];
         if (userId) {
             usersMap.delete(userId);
-            yield redis_1.default.sRem("online-users", userId);
-            const onlineMembers = yield redis_1.default.sMembers("online-users");
+            // await redis.sRem("online-users",userId)
+            // const onlineMembers = await redis.sMembers("online-users")
+            const onlineMembers = [];
             wss.clients.forEach((c) => {
                 c.send(JSON.stringify({ type: "online-users", onlineUsers: onlineMembers }));
             });
         }
     }));
 }));
-const PORT = process.env.PORT;
+const PORT = process.env.PORT || 8080;
 server.listen(PORT, () => {
     console.log(`Server is running on ${PORT}`);
 });

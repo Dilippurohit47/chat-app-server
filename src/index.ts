@@ -15,7 +15,10 @@ import awsRoute from "./aws";
 import groupRoute from "./routes/group";
 import publisher from "./publisherRedis";
 import subscriber, { connectSubscriber } from "./subsciberRedis";
+import "./utils/vector-db"
 const app = express();
+import {getChatBotResponse} from  "./routes/aiChatBot"
+import { getInfoFromCollection } from "./utils/vector-db";
 
 app.use(express.json());
 
@@ -225,9 +228,10 @@ wss.on("connection", async (ws, req) => {
   
         const connectedUsers= Array.from(usersMap.keys())
 for(const id of connectedUsers){ 
-          await redis.sAdd("online-users",id)
+          // await redis.sAdd("online-users",id)
 }
-        const onlineMembers = await redis.sMembers("online-users")
+        // const onlineMembers = await redis.sMembers("online-users")
+        const onlineMembers = []
         wss.clients.forEach((c) => {
           c.send(
             JSON.stringify({ type: "online-users", onlineUsers: onlineMembers })
@@ -262,6 +266,22 @@ for(const id of connectedUsers){
         }))
       }
     }
+
+    if(data.type === "get-chatbot-response"){
+      const query = data.query
+      const ws = usersMap.get(data?.receiverId)?.ws
+      const personalData = await getInfoFromCollection(query) as string[]
+      console.log("personal data" ,personalData)
+      const answer = await getChatBotResponse(query || "hello",personalData)
+      if(ws){
+        ws.send(JSON.stringify({
+          type:"chatbot-reply",
+          answer:answer,
+          receiverId:data.receiverId,
+
+        }))
+      }
+    }
   });
 
   ws.on("close",async () => {
@@ -270,8 +290,9 @@ for(const id of connectedUsers){
     )?.[0];
     if (userId) {
       usersMap.delete(userId);
-      await redis.sRem("online-users",userId)
-      const onlineMembers = await redis.sMembers("online-users")
+      // await redis.sRem("online-users",userId)
+      // const onlineMembers = await redis.sMembers("online-users")
+      const onlineMembers = []
       wss.clients.forEach((c) => {
         c.send(
           JSON.stringify({ type: "online-users", onlineUsers: onlineMembers })
@@ -281,8 +302,9 @@ for(const id of connectedUsers){
   });
 });
 
-const PORT = process.env.PORT ;
+const PORT = process.env.PORT  || 8080;
 
 server.listen(PORT, () => {
-  console.log(`Server is running on ${PORT}`); 
+  console.log(`Server is running on ${PORT}`);  
 });
+ 
