@@ -282,6 +282,22 @@ for(const id of connectedUsers){
         }))
       }
     }
+    if(data.type === "offer"){
+      const ws = usersMap.get(data.receiverId)?.ws
+      if(ws){
+        ws.send(JSON.stringify({type:"offer",offer:data.offer}))
+      }
+    }
+    if(data.type === "ice-canditate"){
+      const ws = usersMap.get(data.receiverId)?.ws
+      if(ws){
+        ws.send(JSON.stringify({type:"ice-canditate",canditate:data.canditate}))
+      }
+    }
+    if (data.type === "answer") {
+  const ws = usersMap.get(data.receiverId)?.ws; 
+  if (ws) ws.send(JSON.stringify({ type: "answer", answer: data.answer }));
+}
   });
 
   ws.on("close",async () => {

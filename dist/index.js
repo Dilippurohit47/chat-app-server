@@ -236,7 +236,7 @@ const subscribe = () => __awaiter(void 0, void 0, void 0, function* () {
 subscribe();
 wss.on("connection", (ws, req) => __awaiter(void 0, void 0, void 0, function* () {
     ws.on("message", (m) => __awaiter(void 0, void 0, void 0, function* () {
-        var _a, _b, _c, _d;
+        var _a, _b, _c, _d, _e, _f, _g;
         yield publisherRedis_1.default.publish("messages", m.toString());
         const data = JSON.parse(m.toString());
         if (data.type === "user-info") {
@@ -296,6 +296,23 @@ wss.on("connection", (ws, req) => __awaiter(void 0, void 0, void 0, function* ()
                     receiverId: data.receiverId,
                 }));
             }
+        }
+        if (data.type === "offer") {
+            const ws = (_e = usersMap.get(data.receiverId)) === null || _e === void 0 ? void 0 : _e.ws;
+            if (ws) {
+                ws.send(JSON.stringify({ type: "offer", offer: data.offer }));
+            }
+        }
+        if (data.type === "ice-canditate") {
+            const ws = (_f = usersMap.get(data.receiverId)) === null || _f === void 0 ? void 0 : _f.ws;
+            if (ws) {
+                ws.send(JSON.stringify({ type: "ice-canditate", canditate: data.canditate }));
+            }
+        }
+        if (data.type === "answer") {
+            const ws = (_g = usersMap.get(data.receiverId)) === null || _g === void 0 ? void 0 : _g.ws;
+            if (ws)
+                ws.send(JSON.stringify({ type: "answer", answer: data.answer }));
         }
     }));
     ws.on("close", () => __awaiter(void 0, void 0, void 0, function* () {

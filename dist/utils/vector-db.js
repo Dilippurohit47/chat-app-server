@@ -65,6 +65,22 @@ const infoForEmbedding = [
             category: "Best Projects",
             text: "other projects, side projects, additional projects",
         }
+    },
+    {
+        payload: {
+            field: "Location live",
+            value: "I am from rajasthan india  currently living in maharahstra and doing college from gujarat vadodra",
+            category: "Loation",
+            text: "location live where are you from where u live ",
+        }
+    },
+    {
+        payload: {
+            field: "College university",
+            value: "Pusruing btech from Parul universirty vadodra",
+            category: "College",
+            text: "college university school",
+        }
     }
 ];
 function createEmbeddings() {
@@ -96,7 +112,7 @@ function createEmbeddings() {
         }
     });
 }
-createEmbeddings();
+//  createEmbeddings()
 const getCollection = () => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const result = yield client.getCollections();
