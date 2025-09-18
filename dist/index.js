@@ -303,16 +303,20 @@ wss.on("connection", (ws, req) => __awaiter(void 0, void 0, void 0, function* ()
                 ws.send(JSON.stringify({ type: "offer", offer: data.offer }));
             }
         }
-        if (data.type === "ice-canditate") {
+        if (data.type === "ice-candidate") {
+            console.log("`sending ice candidtate`", data);
             const ws = (_f = usersMap.get(data.receiverId)) === null || _f === void 0 ? void 0 : _f.ws;
             if (ws) {
-                ws.send(JSON.stringify({ type: "ice-canditate", canditate: data.canditate }));
+                ws.send(JSON.stringify({ type: "ice-candidate", candidate: data.candidate }));
             }
         }
         if (data.type === "answer") {
+            console.log("answer getted and sending ", data);
             const ws = (_g = usersMap.get(data.receiverId)) === null || _g === void 0 ? void 0 : _g.ws;
-            if (ws)
+            if (ws) {
                 ws.send(JSON.stringify({ type: "answer", answer: data.answer }));
+                console.log("answer sended");
+            }
         }
     }));
     ws.on("close", () => __awaiter(void 0, void 0, void 0, function* () {

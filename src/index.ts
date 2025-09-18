@@ -281,22 +281,28 @@ for(const id of connectedUsers){
 
         }))
       }
-    }
+    } 
     if(data.type === "offer"){
       const ws = usersMap.get(data.receiverId)?.ws
       if(ws){
         ws.send(JSON.stringify({type:"offer",offer:data.offer}))
       }
     }
-    if(data.type === "ice-canditate"){
+    if(data.type === "ice-candidate"){
+      console.log("`sending ice candidtate`",data)
       const ws = usersMap.get(data.receiverId)?.ws
       if(ws){
-        ws.send(JSON.stringify({type:"ice-canditate",canditate:data.canditate}))
+        ws.send(JSON.stringify({type:"ice-candidate",candidate:data.candidate}))
       }
     }
     if (data.type === "answer") {
+      console.log("answer getted and sending ",data)
   const ws = usersMap.get(data.receiverId)?.ws; 
-  if (ws) ws.send(JSON.stringify({ type: "answer", answer: data.answer }));
+  if (ws) {
+    ws.send(JSON.stringify({ type: "answer", answer: data.answer }));
+    console.log("answer sended")
+
+  }
 }
   });
 
