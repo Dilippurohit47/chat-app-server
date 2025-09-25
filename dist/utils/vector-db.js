@@ -122,7 +122,7 @@ const getCollection = () => __awaiter(void 0, void 0, void 0, function* () {
         console.error('Could not get collections:', err);
     }
 });
-getCollection();
+// getCollection() 
 const createCollection = () => __awaiter(void 0, void 0, void 0, function* () {
     console.log("here");
     try {

@@ -215,6 +215,8 @@ wss.on("connection", async (ws, req) => {
   ws.on("message", async (m) => {
     await publisher.publish("messages", m.toString());
     const data = JSON.parse(m.toString());
+console.log("data",data)
+
     if (data.type === "user-info") {
       const user = await prisma.user.findUnique({
         where: {
@@ -299,9 +301,49 @@ for(const id of connectedUsers){
       console.log("answer getted and sending ",data)
   const ws = usersMap.get(data.receiverId)?.ws; 
   if (ws) {
-    ws.send(JSON.stringify({ type: "answer", answer: data.answer }));
+    ws.send(JSON.stringify({ type: "answer", answer: data.answer })); 
     console.log("answer sended")
 
+  }
+}
+
+if(data.type === "audio-vedio-toggle"){ 
+  console.log("in audio video toggle")
+  const ws = usersMap.get(data.receiverId)?.ws
+  if(ws){
+    ws.send(JSON.stringify({
+      audio:data.audio,
+      video:data.video,
+      type:"audio-video-toggle"
+    }))
+  }
+}
+if(data.type === "someone-is-calling"){
+  const ws = usersMap.get(data.callReceiverId)?.ws
+  if(ws){
+    ws.send(JSON.stringify({
+      type:"someone-is-calling",
+      callerData:data.callerData
+    }))
+  }
+}
+
+if(data.type === "call-status"){
+  if(data.callStatus === "cancel"){
+const ws = usersMap.get(data.callReceiverId)?.ws
+    ws.send(JSON.stringify({
+      type:"client-call-status",
+      callStatus:"cancel"
+    }))
+  }
+  if(data.callStatus === "accepted"){
+const ws = usersMap.get(data.receiverId)?.ws 
+if(ws){
+  ws.send(JSON.stringify({
+    type:"client-call-status",
+    callStatus:"accepted"
+  }))
+}
   }
 }
   });

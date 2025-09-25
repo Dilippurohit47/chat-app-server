@@ -1,10 +1,16 @@
 import { createClient, RedisClientType } from "redis";
 import dotenv from "dotenv"
+import { mockRedisStore } from "./redis/mockStoreRedis";
 dotenv.config()
 
-const subscriber: RedisClientType = createClient({
+let  subscriber: RedisClientType | any;
+if(process.env.NODE_ENV === "production"){
+  subscriber = createClient({
   url: process.env.REDIS_URL
-});
+})
+}else{
+  subscriber = mockRedisStore
+}
 
 subscriber.on("connect", () => {
   console.log("Subscriber connected");

@@ -14,18 +14,25 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const redis_1 = require("redis");
 const dotenv_1 = __importDefault(require("dotenv"));
+const mockStoreRedis_1 = require("./redis/mockStoreRedis");
 dotenv_1.default.config();
-const publsiher = (0, redis_1.createClient)({
-    url: process.env.REDIS_URL
-});
-publsiher.on("error", (error) => { console.log(error); });
-publsiher.on("connect", () => {
+let publisher;
+if (process.env.NODE_ENV === "production") {
+    publisher = (0, redis_1.createClient)({
+        url: process.env.REDIS_URL
+    });
+}
+else {
+    publisher = mockStoreRedis_1.mockRedisStore;
+}
+publisher.on("error", (error) => { console.log(error); });
+publisher.on("connect", () => {
     console.log("Redis is connected to local");
 });
-publsiher.on("ready", () => {
+publisher.on("ready", () => {
     console.log("Redis is ready to use");
 });
 (() => __awaiter(void 0, void 0, void 0, function* () {
-    yield publsiher.connect();
+    yield publisher.connect();
 }))();
-exports.default = publsiher;
+exports.default = publisher;

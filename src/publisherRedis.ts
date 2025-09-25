@@ -1,22 +1,28 @@
 import {createClient ,RedisClientType } from "redis"
 import dotenv from "dotenv"
+import { mockRedisStore } from "./redis/mockStoreRedis";
 dotenv.config()
 
-  const publsiher:RedisClientType  =  createClient({
+  let publisher:RedisClientType | any;
+  if(process.env.NODE_ENV === "production"){
+    publisher   =  createClient({
     url:process.env.REDIS_URL
 })
+  }else{
+    publisher = mockRedisStore
+  }
 
-publsiher.on("error" , (error)=> {console.log(error)})
-publsiher.on("connect", () => {
+publisher.on("error" , (error)=> {console.log(error)})
+publisher.on("connect", () => {
   console.log("Redis is connected to local");
 });
 
-publsiher.on("ready", () => {
+publisher.on("ready", () => {
   console.log("Redis is ready to use");
 });
 
 
 (async() =>{
-await publsiher.connect()
+await publisher.connect()
 })()
-export default publsiher
+export default publisher

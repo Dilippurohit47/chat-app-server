@@ -15,10 +15,17 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.connectSubscriber = connectSubscriber;
 const redis_1 = require("redis");
 const dotenv_1 = __importDefault(require("dotenv"));
+const mockStoreRedis_1 = require("./redis/mockStoreRedis");
 dotenv_1.default.config();
-const subscriber = (0, redis_1.createClient)({
-    url: process.env.REDIS_URL
-});
+let subscriber;
+if (process.env.NODE_ENV === "production") {
+    subscriber = (0, redis_1.createClient)({
+        url: process.env.REDIS_URL
+    });
+}
+else {
+    subscriber = mockStoreRedis_1.mockRedisStore;
+}
 subscriber.on("connect", () => {
     console.log("Subscriber connected");
 });

@@ -121,8 +121,7 @@ const getCollection = async() =>{
     console.error('Could not get collections:', err);
 }
 }
-getCollection() 
-
+// getCollection() 
 export const createCollection = async() =>{
         console.log("here")
 

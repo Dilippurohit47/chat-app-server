@@ -236,9 +236,10 @@ const subscribe = () => __awaiter(void 0, void 0, void 0, function* () {
 subscribe();
 wss.on("connection", (ws, req) => __awaiter(void 0, void 0, void 0, function* () {
     ws.on("message", (m) => __awaiter(void 0, void 0, void 0, function* () {
-        var _a, _b, _c, _d, _e, _f, _g;
+        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l;
         yield publisherRedis_1.default.publish("messages", m.toString());
         const data = JSON.parse(m.toString());
+        console.log("data", data);
         if (data.type === "user-info") {
             const user = yield prisma_1.prisma.user.findUnique({
                 where: {
@@ -316,6 +317,44 @@ wss.on("connection", (ws, req) => __awaiter(void 0, void 0, void 0, function* ()
             if (ws) {
                 ws.send(JSON.stringify({ type: "answer", answer: data.answer }));
                 console.log("answer sended");
+            }
+        }
+        if (data.type === "audio-vedio-toggle") {
+            console.log("in audio video toggle");
+            const ws = (_h = usersMap.get(data.receiverId)) === null || _h === void 0 ? void 0 : _h.ws;
+            if (ws) {
+                ws.send(JSON.stringify({
+                    audio: data.audio,
+                    video: data.video,
+                    type: "audio-video-toggle"
+                }));
+            }
+        }
+        if (data.type === "someone-is-calling") {
+            const ws = (_j = usersMap.get(data.callReceiverId)) === null || _j === void 0 ? void 0 : _j.ws;
+            if (ws) {
+                ws.send(JSON.stringify({
+                    type: "someone-is-calling",
+                    callerData: data.callerData
+                }));
+            }
+        }
+        if (data.type === "call-status") {
+            if (data.callStatus === "cancel") {
+                const ws = (_k = usersMap.get(data.callReceiverId)) === null || _k === void 0 ? void 0 : _k.ws;
+                ws.send(JSON.stringify({
+                    type: "client-call-status",
+                    callStatus: "cancel"
+                }));
+            }
+            if (data.callStatus === "accepted") {
+                const ws = (_l = usersMap.get(data.receiverId)) === null || _l === void 0 ? void 0 : _l.ws;
+                if (ws) {
+                    ws.send(JSON.stringify({
+                        type: "client-call-status",
+                        callStatus: "accepted"
+                    }));
+                }
             }
         }
     }));
