@@ -332,6 +332,7 @@ wss.on("connection", (ws, req) => __awaiter(void 0, void 0, void 0, function* ()
         }
         if (data.type === "someone-is-calling") {
             const ws = (_j = usersMap.get(data.callReceiverId)) === null || _j === void 0 ? void 0 : _j.ws;
+            console.log(data);
             if (ws) {
                 ws.send(JSON.stringify({
                     type: "someone-is-calling",
@@ -340,12 +341,15 @@ wss.on("connection", (ws, req) => __awaiter(void 0, void 0, void 0, function* ()
             }
         }
         if (data.type === "call-status") {
-            if (data.callStatus === "cancel") {
+            if (data.callStatus === "hang-up") {
+                console.log("hang ", data);
                 const ws = (_k = usersMap.get(data.callReceiverId)) === null || _k === void 0 ? void 0 : _k.ws;
-                ws.send(JSON.stringify({
-                    type: "client-call-status",
-                    callStatus: "cancel"
-                }));
+                if (ws) {
+                    ws.send(JSON.stringify({
+                        type: "client-call-status",
+                        callStatus: "hang-up"
+                    }));
+                }
             }
             if (data.callStatus === "accepted") {
                 const ws = (_l = usersMap.get(data.receiverId)) === null || _l === void 0 ? void 0 : _l.ws;

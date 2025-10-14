@@ -6,12 +6,12 @@ let redis: RedisClientType | any;
 if (process.env.NODE_ENV === "production") {
   redis = createClient({
     url: process.env.REDIS_URL,
-  });
+  }); 
 } else {
   redis = mockRedisStore
 }
 
-redis.on("error",(error) =>{
+redis.on("error",(error) =>{  
     console.log("Error in main redis" ,error)  
 })
  

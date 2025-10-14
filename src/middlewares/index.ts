@@ -3,9 +3,9 @@ import { Response,Request,NextFunction } from "express"
 import dotenv from "dotenv"
 dotenv.config()
 export const authorizeToken =(req:Request,res:Response,next:NextFunction) =>{
-try {
+try { 
     const token = req.cookies["chat-token"]
-    if(!token){
+    if(!token){ 
         res.status(404).json({
             message:"Login First"
         })

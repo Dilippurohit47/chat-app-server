@@ -320,6 +320,7 @@ if(data.type === "audio-vedio-toggle"){
 }
 if(data.type === "someone-is-calling"){
   const ws = usersMap.get(data.callReceiverId)?.ws
+  console.log(data)
   if(ws){
     ws.send(JSON.stringify({
       type:"someone-is-calling",
@@ -329,22 +330,25 @@ if(data.type === "someone-is-calling"){
 }
 
 if(data.type === "call-status"){
-  if(data.callStatus === "cancel"){
+  if(data.callStatus === "hang-up"){
+    console.log("hang ",data)
 const ws = usersMap.get(data.callReceiverId)?.ws
-    ws.send(JSON.stringify({
+if(ws){
+      ws.send(JSON.stringify({
       type:"client-call-status",
-      callStatus:"cancel"
+      callStatus:"hang-up"
     }))
+}
   }
   if(data.callStatus === "accepted"){
 const ws = usersMap.get(data.receiverId)?.ws 
 if(ws){
   ws.send(JSON.stringify({
-    type:"client-call-status",
+    type:"client-call-status", 
     callStatus:"accepted"
   }))
 }
-  }
+  } 
 }
   });
 
