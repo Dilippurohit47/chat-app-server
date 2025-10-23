@@ -232,7 +232,6 @@ console.log("data",data)
 for(const id of connectedUsers){ 
           // await redis.sAdd("online-users",id)
 }
-        // const onlineMembers = await redis.sMembers("online-users")
         const onlineMembers = []
         wss.clients.forEach((c) => {
           c.send(
@@ -375,4 +374,4 @@ const PORT = process.env.PORT  || 8080;
 server.listen(PORT, () => {
   console.log(`Server is running on ${PORT}`);  
 });
- 
+  

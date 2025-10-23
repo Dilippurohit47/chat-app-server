@@ -252,7 +252,6 @@ wss.on("connection", (ws, req) => __awaiter(void 0, void 0, void 0, function* ()
                 for (const id of connectedUsers) {
                     // await redis.sAdd("online-users",id)
                 }
-                // const onlineMembers = await redis.sMembers("online-users")
                 const onlineMembers = [];
                 wss.clients.forEach((c) => {
                     c.send(JSON.stringify({ type: "online-users", onlineUsers: onlineMembers }));
