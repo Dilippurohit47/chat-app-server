@@ -19,6 +19,7 @@ const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const zod_1 = require("../types/zod");
 const redis_1 = __importDefault(require("../redis/redis"));
 const googleapis_1 = require("googleapis");
+const bcrypt_1 = __importDefault(require("bcrypt"));
 const CLIENT_ID = process.env.CLIENT_ID;
 const CLIENT_SECRET = process.env.CLIENT_SECRET;
 const oauth2Client = new googleapis_1.google.auth.OAuth2(CLIENT_ID, CLIENT_SECRET, "postmessage");
@@ -79,7 +80,8 @@ app.post("/sign-in", (req, res) => __awaiter(void 0, void 0, void 0, function* (
             });
             return;
         }
-        if ((user === null || user === void 0 ? void 0 : user.password) !== password) {
+        const hashedPassword = yield bcrypt_1.default.compare(password, user.password);
+        if (!hashedPassword) {
             res.status(403).json({
                 message: "Password or email is incorrect",
             });
@@ -125,16 +127,17 @@ app.post("/sign-up", (req, res) => __awaiter(void 0, void 0, void 0, function* (
             },
         });
         if (userExist) {
-            res.status(404).json({
+            res.status(403).json({
                 message: "User with this email already exist",
             });
             return;
         }
+        const hashedPassword = yield bcrypt_1.default.hash(password, 10);
         const user = yield prisma_1.prisma.user.create({
             data: {
                 name: name,
                 email: email,
-                password: password,
+                password: hashedPassword,
                 profileUrl,
             },
         });
@@ -158,13 +161,11 @@ const verifyAccessToken = (req, res, next) => {
             res.status(401).json({ message: "Access token missing" });
             return;
         }
-        console.log("atutyh", authHeader);
         const token = authHeader.split(" ")[1];
         if (!token) {
             res.status(401).json({ message: "Invalid authorization header" });
             return;
         }
-        console.log("token", token);
         jsonwebtoken_1.default.verify(token, helper_1.JWT_PASSWORD, (err, decoded) => {
             if (err) {
                 console.log(err);

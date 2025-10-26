@@ -6,6 +6,7 @@ import { singnUpSchema } from "../types/zod";
 import redis from "../redis/redis";
 import { google } from "googleapis";
 import { GoogleUserTypes } from "../types/index";
+import bcrypt from "bcrypt"
 
 const CLIENT_ID = process.env.CLIENT_ID;
 const CLIENT_SECRET = process.env.CLIENT_SECRET;
@@ -16,9 +17,7 @@ const oauth2Client = new google.auth.OAuth2(
 );
 const app = express.Router();
 
-type user = {
-  id: string;
-};
+
 declare module "express-serve-static-core" {
   interface Request {
     user?: JwtPayload;
@@ -88,7 +87,9 @@ app.post("/sign-in", async (req, res) => {
       });
       return;
     }
-    if (user?.password !== password) {
+
+    const hashedPassword = await bcrypt.compare(password,user.password!)
+    if (!hashedPassword) {
       res.status(403).json({
         message: "Password or email is incorrect",
       });
@@ -114,7 +115,7 @@ app.post("/sign-in", async (req, res) => {
   } catch (error) {
     console.log(error);
     res.status(500).json({
-      message: "Internal server error",
+      message: "Internal server error",  
     });
   }
 });
@@ -122,9 +123,7 @@ app.post("/sign-in", async (req, res) => {
 app.post("/sign-up", async (req: Request, res: Response) => {
   try {
     const { name, email, password, profileUrl } = req.body;
-
     const parsedData = singnUpSchema.safeParse(req.body);
-
     if (!parsedData.success) {
       const dataError = formatZodError(parsedData.error.issues);
       res.status(403).json({
@@ -139,16 +138,17 @@ app.post("/sign-up", async (req: Request, res: Response) => {
       },
     });
     if (userExist) {
-      res.status(404).json({
+      res.status(403).json({
         message: "User with this email already exist",
       });
       return;
     }
+    const hashedPassword = await bcrypt.hash(password,10)
     const user = await prisma.user.create({
       data: {
         name: name,
         email: email,
-        password: password,
+        password: hashedPassword,
         profileUrl,
       },
     });
@@ -173,7 +173,6 @@ const verifyAccessToken = (req: Request, res: Response, next: NextFunction) => {
       res.status(401).json({ message: "Access token missing" });
       return;
     }
-console.log("atutyh",authHeader)
     const token = authHeader.split(" ")[1];
 
     if (!token) {
@@ -181,7 +180,6 @@ console.log("atutyh",authHeader)
       return;
     }
 
-console.log("token",token)
     jwt.verify(token, JWT_PASSWORD, (err, decoded) => {
       if (err) {
         console.log(err);
@@ -407,3 +405,4 @@ app.post("/google/callback", async (req, res) => {
 });
 
 export default app;
+ 
