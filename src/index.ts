@@ -15,6 +15,7 @@ import awsRoute from "./aws";
 import groupRoute from "./routes/group";
 import publisher from "./publisherRedis";
 import subscriber, { connectSubscriber } from "./subsciberRedis";
+import userRoutes from "./routes/user"
 import "./utils/vector-db"
 const app = express();
 import {getChatBotResponse} from  "./routes/aiChatBot"
@@ -27,7 +28,7 @@ app.use(
     origin: [
       "http://localhost:5173", 
       "https://chat-app-client-tawny.vercel.app",
-    ],  
+    ],    
     credentials: true,
     methods: ["GET", "POST", "PUT", "OPTIONS", "DELETE"],
   })
@@ -36,11 +37,12 @@ app.use(cookieParser());
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
 
-app.use("/user", userAuth);
+app.use("/user", userAuth); 
 app.use("/chat", Messages);
 app.use("/aws", awsRoute);
 app.use("/group", groupRoute);
 app.use("/chat-setting", Chat);
+// app.use("/user",userRoutes)
 const usersMap = new Map();
 
 const subscribeToChannel = async () => {
@@ -63,41 +65,43 @@ const subscribe = async () => {
         ws.send(
           JSON.stringify({
             type: "personal-msg",
-            message: data.message,
-            receiverId: receiverId,
+            receiverContent: data.receiverContent,
+            senderContent: data.senderContent,
+            receiverId: receiverId, 
             senderId: data.senderId,
             isMedia:data.isMedia || false
           })
         );
       }
       if (data.senderId || receiverId || data.message) {
-        await saveMessage(data.senderId, receiverId, data.message, data.isMedia);
+        console.log("ids",data.senderId , data.receiverId)
+        await saveMessage(data.senderId, receiverId, data.message, data.isMedia ,data.receiverContent ,data.senderContent);
         const senderRecentChats = await sendRecentChats(data.senderId);
         const receiverRecentChats = await sendRecentChats(data.receiverId);
-
+        console.log("recent chats",sendRecentChats  , receiverRecentChats)
         if (usersMap.has(data.senderId)) {
           let senderWs = usersMap.get(data.senderId).ws;
           if (senderWs && senderWs.readyState === 1) {
             senderWs.send(
-              JSON.stringify({
+              JSON.stringify({ 
                 type: "recent-chats",
                 chats: senderRecentChats,
               })
-            );
+            ); 
           }
-        }
+        } 
 
         if (usersMap.has(receiverId)) {
           let receiverWs = usersMap.get(receiverId).ws;
-          if (receiverWs && receiverWs.readyState === 1) {
+          if (receiverWs && receiverWs.readyState === 1) { 
             receiverWs.send(
               JSON.stringify({
-                type: "recent-chats",
+                type: "recent-chats", 
                 chats: receiverRecentChats,
               })
             );
           } else {
-            console.log(`❌ WebSocket not open for receiver (${receiverId})`);
+            console.log(`❌ WebSocket not open for receiver (${receiverId})`); 
           }
         }
       }
@@ -107,7 +111,7 @@ const subscribe = async () => {
       const groupMembers = await prisma.group.findFirst({
         where: {
           id: groupId,
-        },
+        }, 
         include: {
           members: {
             select: {
@@ -215,7 +219,6 @@ wss.on("connection", async (ws, req) => {
   ws.on("message", async (m) => {
     await publisher.publish("messages", m.toString());
     const data = JSON.parse(m.toString());
-console.log("data",data)
 
     if (data.type === "user-info") {
       const user = await prisma.user.findUnique({
@@ -223,7 +226,7 @@ console.log("data",data)
           id: data.userId,
         }, 
       });
-
+ 
 
       if (user) {
         usersMap.set(user.id, { ws, userInfo: user });
@@ -245,7 +248,7 @@ for(const id of connectedUsers){
       usersMap.get(data.userId)?.ws.send(
         JSON.stringify({
           type: "recent-chats",
-          chats: recentChats,
+          chats:recentChats,
         })
       );
     }
@@ -272,7 +275,6 @@ for(const id of connectedUsers){
       const query = data.query
       const ws = usersMap.get(data?.receiverId)?.ws
       const personalData = await getInfoFromCollection(query) as string[]
-      console.log("personal data" ,personalData)
       const answer = await getChatBotResponse(query || "hello",personalData)
       if(ws){
         ws.send(JSON.stringify({
@@ -290,24 +292,20 @@ for(const id of connectedUsers){
       }
     }
     if(data.type === "ice-candidate"){
-      console.log("`sending ice candidtate`",data)
       const ws = usersMap.get(data.receiverId)?.ws
       if(ws){
         ws.send(JSON.stringify({type:"ice-candidate",candidate:data.candidate}))
       }
     }
     if (data.type === "answer") {
-      console.log("answer getted and sending ",data)
   const ws = usersMap.get(data.receiverId)?.ws; 
   if (ws) {
     ws.send(JSON.stringify({ type: "answer", answer: data.answer })); 
-    console.log("answer sended")
 
   }
 }
 
 if(data.type === "audio-vedio-toggle"){ 
-  console.log("in audio video toggle")
   const ws = usersMap.get(data.receiverId)?.ws
   if(ws){
     ws.send(JSON.stringify({
@@ -319,7 +317,6 @@ if(data.type === "audio-vedio-toggle"){
 }
 if(data.type === "someone-is-calling"){
   const ws = usersMap.get(data.callReceiverId)?.ws
-  console.log(data)
   if(ws){
     ws.send(JSON.stringify({
       type:"someone-is-calling",
@@ -330,7 +327,6 @@ if(data.type === "someone-is-calling"){
 
 if(data.type === "call-status"){
   if(data.callStatus === "hang-up"){
-    console.log("hang ",data)
 const ws = usersMap.get(data.callReceiverId)?.ws
 if(ws){
       ws.send(JSON.stringify({
@@ -359,7 +355,7 @@ if(ws){
       usersMap.delete(userId);
       // await redis.sRem("online-users",userId)
       // const onlineMembers = await redis.sMembers("online-users")
-      const onlineMembers = []
+      const onlineMembers = [] 
       wss.clients.forEach((c) => {
         c.send(
           JSON.stringify({ type: "online-users", onlineUsers: onlineMembers })

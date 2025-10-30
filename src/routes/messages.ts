@@ -1,20 +1,22 @@
 import { prisma } from "../utils/prisma";
 import express, { Request, Response } from "express";
  export const upsertRecentChats = async (
-  userId1: string,
-  userId2: string,
-  lastMessage: string
+  senderId: string,
+  receiverId: string,
+  receiverContent: string,
+  senderContent:string
 ) => {
+  console.log("upsert recent chats ",senderId ,receiverId)
   try {
     let chat = await prisma.chat.findFirst({
       where: {
         OR: [
-          { userId1: userId1, userId2: userId2 },
-          { userId1: userId2, userId2: userId1 },
+          { senderId: senderId, receiverId: receiverId },
+          { senderId: receiverId, receiverId: senderId },
         ],
       },
     });
-
+ 
     const unreadCount = chat?.unreadCount as {unreadMessages : number}
 
     if (chat) {
@@ -23,10 +25,13 @@ import express, { Request, Response } from "express";
           id: chat.id,
         },
         data: {
-          lastMessage: lastMessage,
+          lastMessageForSender:senderContent,
+          lastMessageForReceiver:receiverContent,
+          senderId:senderId,
+          receiverId:receiverId,
           lastMessageCreatedAt: new Date(),
           unreadCount: {
-            userId: userId2,
+            userId: receiverId,
             unreadMessages:
               unreadCount?.unreadMessages != null
                 ? unreadCount.unreadMessages + 1
@@ -38,49 +43,54 @@ import express, { Request, Response } from "express";
       await prisma.deletedChat.deleteMany({
         where:{
           userId:{
-            in:[userId1,userId2]
+            in:[senderId,receiverId]
           },
           chatId:chat.id
         }
       })
-    } else {
+    } else {  
     chat =  await prisma.chat.create({
         data: {
-          userId1: userId1,
-          userId2: userId2,
-          lastMessage: lastMessage,
+          senderId: senderId,
+          receiverId: receiverId,
+          lastMessageForSender: senderContent,
+          lastMessageForReceiver:receiverContent,
           lastMessageCreatedAt: new Date(),
         },
       });
     }
     return chat
   } catch (error) {
-    console.log(error);
+    console.log("error in upserting recent chats",error);
   }
 };
 export const saveMessage = async (
   senderId: string,
   receiverId: string,
   content: string,
-  isMedia:boolean
+  isMedia:boolean,
+  receiverContent:string,
+  senderContent:string,
 ) => {
-  try {
+  try { 
  
-const chat  = await upsertRecentChats(senderId,receiverId,content)
-
+    console.log("save message" ,senderId ,receiverId)
+const chat  = await upsertRecentChats(senderId,receiverId,receiverContent ,senderContent)
 if(!chat) return
 await prisma.messages.create({
       data: {
         senderId: senderId,
         receiverId: receiverId,
-        content: content,
+        content: "content",
         chatId: chat.id,
-        isMedia:isMedia
+        isMedia:isMedia,
+        senderContent:senderContent,
+        receiverContent:receiverContent,
       },
     });
     return true;
   } catch (error) {
-    console.log(error);
+    console.log("error in saving message",error);
     return false;
   }
 };
@@ -190,8 +200,8 @@ app.post("/create-chats", async (req, res) => {
     const chat = await prisma.chat.findFirst({
       where: {
         OR: [
-          { userId1: userId1, userId2: userId2 },
-          { userId1: userId2, userId2: userId1 },
+          { user1: userId1, user2: userId2 },
+          { user1: userId2, user2: userId1 },
         ],
       },
     });
@@ -232,17 +242,17 @@ app.post("/create-chats", async (req, res) => {
 app.get("/get-recent-chats", async (req, res) => {
   try {
     const userId = req.query.userId as string;
-    if (!userId) {
-      res.status(404).json({
-        message: "Login first",
-      });
-      return;
-    }
+    // if (!userId) {
+    //   res.status(404).json({
+    //     message: "Login first",
+    //   });
+    //   return;
+    // } 
     const chats = await prisma.chat.findMany({
       where: {
         AND: [
           {
-            OR: [{ userId1: userId }, { userId2: userId }],
+            OR: [{ senderId: userId }, { receiverId: userId }],
           },
           {
             deleteBy: {
@@ -267,9 +277,12 @@ app.get("/get-recent-chats", async (req, res) => {
       const otherUser = chat.user1.id === userId ? chat.user2 : chat.user1;
       return {
         chatId: chat.id,
-        lastMessage: chat.lastMessage,
+        lastMessageForSender: chat.lastMessageForSender,
+        lastMessageForReceiver: chat.lastMessageForReceiver,
         lastMessageCreatedAt: chat.lastMessageCreatedAt,
         unreadCount: chat.unreadCount,
+        senderId:chat.senderId,
+        receiverId:chat.receiverId,
         ...otherUser,
       };
     });
@@ -374,29 +387,15 @@ app.put("/update-unreadmessage-count", async (req:Request<{},{},DeleteChatBody>,
 export const sendRecentChats = async (userId: string) => {
   try {
     if (!userId) {
-      console.log("userId required");
       return;
     }
     const chats = await prisma.chat.findMany({
-      where: {
-        AND: [
-          {
-            OR: [{ userId1: userId }, { userId2: userId }],
-            deleteBy: {
-              none: {
-                userId: userId,
-              },
-            },
-          },
-          {
-            deleteBy: {
-              none: {
-                userId: userId,
-              },
-            },
-          },
-        ],
-      },
+  where: {
+  OR: [{ senderId: userId }, { receiverId: userId }],
+  deleteBy: {
+    none: { userId },
+  },
+},
       orderBy: {
         lastMessageCreatedAt: "desc",
       },
@@ -405,12 +404,15 @@ export const sendRecentChats = async (userId: string) => {
         user2: true,
       },
     });
-
+console.log("chats from recent db",chats)
     const formattedChats = chats.map((chat) => {
       const otherUser = chat.user1.id === userId ? chat.user2 : chat.user1;
       return {
         chatId: chat.id,
-        lastMessage: chat.lastMessage,
+        lastMessageForReceiver: chat.lastMessageForReceiver,
+        lastMessageForSender: chat.lastMessageForSender,
+        senderId:chat.senderId,
+        receiverId:chat.receiverId,
         lastMessageCreatedAt: chat.lastMessageCreatedAt,
         unreadCount: chat.unreadCount,
         ...otherUser,
@@ -418,7 +420,7 @@ export const sendRecentChats = async (userId: string) => {
     });
     return formattedChats;
   } catch (error) {
-    console.log(error);
+    console.log("error in send recent chats ",error);
   }
 };
 

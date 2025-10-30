@@ -78,6 +78,7 @@ app.post("/sign-in", async (req, res) => {
         profileUrl: true,
         name: true,
         password: true,
+        publickey:true
       },
     });
 
@@ -122,7 +123,7 @@ app.post("/sign-in", async (req, res) => {
 
 app.post("/sign-up", async (req: Request, res: Response) => {
   try {
-    const { name, email, password, profileUrl } = req.body;
+    const { name, email, password, profileUrl , publicKey } = req.body;
     const parsedData = singnUpSchema.safeParse(req.body);
     if (!parsedData.success) {
       const dataError = formatZodError(parsedData.error.issues);
@@ -136,7 +137,7 @@ app.post("/sign-up", async (req: Request, res: Response) => {
       where: {
         email: email,
       },
-    });
+    }); 
     if (userExist) {
       res.status(403).json({
         message: "User with this email already exist",
@@ -150,6 +151,7 @@ app.post("/sign-up", async (req: Request, res: Response) => {
         email: email,
         password: hashedPassword,
         profileUrl,
+        publickey:publicKey,
       },
     });
 
@@ -200,6 +202,7 @@ const verifyAccessToken = (req: Request, res: Response, next: NextFunction) => {
 
 app.get("/get-user", verifyAccessToken, async (req: Request, res: Response) => {
   try {
+    console.log("in get user")
     if (!req.user) {
       res.status(404).json({
         success: false,
@@ -208,11 +211,11 @@ app.get("/get-user", verifyAccessToken, async (req: Request, res: Response) => {
       return;
     }
     const userId = req.user.id;
-    const cachedUser = await redis.get(`user:${userId}`);
-    if (cachedUser) {
-      res.status(200).json({ user: JSON.parse(cachedUser) });
-      return;
-    }
+    // const cachedUser = await redis.get(`user:${userId}`);
+    // if (cachedUser) {
+    //   res.status(200).json({ user: JSON.parse(cachedUser) });
+    //   return;
+    // }
     const user = await prisma.user.findUnique({
       where: {
         id: userId,
@@ -221,8 +224,10 @@ app.get("/get-user", verifyAccessToken, async (req: Request, res: Response) => {
         profileUrl: true,
         name: true,
         id: true,
+        publickey:true,
       },
     });
+    console.log("lolipop",user)
     if (!user) {
       res.status(404).json({ message: "User not found" });
       return;
@@ -237,7 +242,6 @@ app.get("/get-user", verifyAccessToken, async (req: Request, res: Response) => {
     res.status(500).json({ message: "Internal server error" });
   }
 });
-
 app.get("/all-users", async (req, res) => {
   try {
     const users = await prisma.user.findMany({
@@ -246,9 +250,10 @@ app.get("/all-users", async (req, res) => {
         name: true,
         email: true,
         profileUrl: true,
-      },
+        publickey:true,
+      }, 
       orderBy: {
-        createdAt: "asc",
+        createdAt: "asc", 
       },
     });
 
@@ -268,7 +273,7 @@ app.get("/refresh", async (req: Request, res: Response) => {
         message: "Unauthorized",
       });
       return;
-    }
+    } 
 
     const user = await prisma.user.findUnique({
       where: {
@@ -276,7 +281,7 @@ app.get("/refresh", async (req: Request, res: Response) => {
       },
     });
     if (!user) {
-      res.status(401).json({
+      res.status(401).json({ 
         success: false,
         message: "Unauthorized , Login first",
       });

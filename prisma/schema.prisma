@@ -19,18 +19,21 @@ model User {
   receivedMessages Messages[] @relation("ReceivedMessages") 
   createdAt DateTime @default(now())
   profileUrl String?
-  chats1      Chat[]  @relation("User1")
-  chats2      Chat[]  @relation("User2")
+  sentChats      Chat[]  @relation("user1")
+  receivedChats   Chat[]  @relation("user2")
   deletedMessage DeletedMessage[]
-  deletedChat DeletedChat[]
+  deletedChat DeletedChat[] 
   groupMemberships GroupMember[]   
   groupMessages    GroupMessage[]  
   deletedGroup DeletedGroup[]
   refreshToken String? @unique
   tokenExpiresIn DateTime?
+  publickey String?
 }
 model Messages {
   id          String   @id @default(uuid())
+  senderContent String?
+  receiverContent String?
   content     String
   createdAt   DateTime @default(now())
   senderId    String
@@ -41,17 +44,18 @@ model Messages {
   chat      Chat     @relation(fields: [chatId], references: [id])
   deletedBy DeletedMessage[]
   isMedia Boolean @default(false)
-} 
+}  
 
 model Chat {
   id          String   @id @default(uuid())
-  userId1 String
-  userId2 String
-  lastMessage String
+  senderId String
+  receiverId String
+  lastMessageForSender String
+  lastMessageForReceiver String
   lastMessageCreatedAt  DateTime @default(now())
   unreadCount Json? 
-  user1 User @relation(name: "User1", fields: [userId1], references: [id])
-  user2 User @relation(name: "User2", fields: [userId2], references: [id])
+  user1 User @relation(name: "user1", fields: [senderId], references: [id])
+  user2 User @relation(name: "user2", fields: [receiverId], references: [id])
   message Messages[]
   deleteBy DeletedChat[]
 }

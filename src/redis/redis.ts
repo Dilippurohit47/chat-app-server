@@ -19,7 +19,7 @@ redis.on("ready", () => {
   console.log("main Redis is ready to use");
 });
 
-(async() =>{
+(async() =>{ 
     await redis.connect()
 })()
 
