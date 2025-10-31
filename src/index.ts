@@ -15,7 +15,6 @@ import awsRoute from "./aws";
 import groupRoute from "./routes/group";
 import publisher from "./publisherRedis";
 import subscriber, { connectSubscriber } from "./subsciberRedis";
-import userRoutes from "./routes/user"
 import "./utils/vector-db"
 const app = express();
 import {getChatBotResponse} from  "./routes/aiChatBot"
@@ -26,7 +25,7 @@ app.use(express.json());
 app.use(
   cors({
     origin: [
-      "http://localhost:5173", 
+      "http://localhost:5173",  
       "https://chat-app-client-tawny.vercel.app",
     ],    
     credentials: true,
@@ -42,7 +41,6 @@ app.use("/chat", Messages);
 app.use("/aws", awsRoute);
 app.use("/group", groupRoute);
 app.use("/chat-setting", Chat);
-// app.use("/user",userRoutes)
 const usersMap = new Map();
 
 const subscribeToChannel = async () => {

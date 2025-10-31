@@ -56,7 +56,11 @@ import express, { Request, Response } from "express";
           lastMessageForSender: senderContent,
           lastMessageForReceiver:receiverContent,
           lastMessageCreatedAt: new Date(),
-        },
+            unreadCount: {
+            userId: receiverId,
+            unreadMessages:1
+          },
+        }, 
       });
     }
     return chat
@@ -217,7 +221,7 @@ app.post("/create-chats", async (req, res) => {
         },
       });
     } else {
-      await prisma.chat.create({
+      await prisma.chat.create({ 
         data: {
           userId1: userId1,
           userId2: userId2,
@@ -228,7 +232,7 @@ app.post("/create-chats", async (req, res) => {
       });
     }
 
-    res.json({
+    res.json({ 
       message: "Chat created",
     });
   } catch (error) {
@@ -242,12 +246,12 @@ app.post("/create-chats", async (req, res) => {
 app.get("/get-recent-chats", async (req, res) => {
   try {
     const userId = req.query.userId as string;
-    // if (!userId) {
-    //   res.status(404).json({
-    //     message: "Login first",
-    //   });
-    //   return;
-    // } 
+    if (!userId) {
+      res.status(404).json({
+        message: "Login first",
+      });
+      return;
+    } 
     const chats = await prisma.chat.findMany({
       where: {
         AND: [
