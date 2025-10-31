@@ -34,7 +34,7 @@ app.use(
 );
 app.use(cookieParser());
 const server = http.createServer(app);
-const wss = new WebSocketServer({ server });
+const wss = new WebSocketServer({ server, path: "/chat-backend" });
 
 app.use("/user", userAuth); 
 app.use("/chat", Messages);
