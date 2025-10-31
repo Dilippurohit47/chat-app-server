@@ -97,16 +97,19 @@ const subscribe = () => __awaiter(void 0, void 0, void 0, function* () {
                 let { ws } = usersMap.get(receiverId);
                 ws.send(JSON.stringify({
                     type: "personal-msg",
-                    message: data.message,
+                    receiverContent: data.receiverContent,
+                    senderContent: data.senderContent,
                     receiverId: receiverId,
                     senderId: data.senderId,
                     isMedia: data.isMedia || false
                 }));
             }
             if (data.senderId || receiverId || data.message) {
-                yield (0, messages_2.saveMessage)(data.senderId, receiverId, data.message, data.isMedia);
+                console.log("ids", data.senderId, data.receiverId);
+                yield (0, messages_2.saveMessage)(data.senderId, receiverId, data.message, data.isMedia, data.receiverContent, data.senderContent);
                 const senderRecentChats = yield (0, messages_1.sendRecentChats)(data.senderId);
                 const receiverRecentChats = yield (0, messages_1.sendRecentChats)(data.receiverId);
+                console.log("recent chats", messages_1.sendRecentChats, receiverRecentChats);
                 if (usersMap.has(data.senderId)) {
                     let senderWs = usersMap.get(data.senderId).ws;
                     if (senderWs && senderWs.readyState === 1) {
@@ -239,7 +242,6 @@ wss.on("connection", (ws, req) => __awaiter(void 0, void 0, void 0, function* ()
         var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l;
         yield publisherRedis_1.default.publish("messages", m.toString());
         const data = JSON.parse(m.toString());
-        console.log("data", data);
         if (data.type === "user-info") {
             const user = yield prisma_1.prisma.user.findUnique({
                 where: {
@@ -287,7 +289,6 @@ wss.on("connection", (ws, req) => __awaiter(void 0, void 0, void 0, function* ()
             const query = data.query;
             const ws = (_d = usersMap.get(data === null || data === void 0 ? void 0 : data.receiverId)) === null || _d === void 0 ? void 0 : _d.ws;
             const personalData = yield (0, vector_db_1.getInfoFromCollection)(query);
-            console.log("personal data", personalData);
             const answer = yield (0, aiChatBot_1.getChatBotResponse)(query || "hello", personalData);
             if (ws) {
                 ws.send(JSON.stringify({
@@ -304,22 +305,18 @@ wss.on("connection", (ws, req) => __awaiter(void 0, void 0, void 0, function* ()
             }
         }
         if (data.type === "ice-candidate") {
-            console.log("`sending ice candidtate`", data);
             const ws = (_f = usersMap.get(data.receiverId)) === null || _f === void 0 ? void 0 : _f.ws;
             if (ws) {
                 ws.send(JSON.stringify({ type: "ice-candidate", candidate: data.candidate }));
             }
         }
         if (data.type === "answer") {
-            console.log("answer getted and sending ", data);
             const ws = (_g = usersMap.get(data.receiverId)) === null || _g === void 0 ? void 0 : _g.ws;
             if (ws) {
                 ws.send(JSON.stringify({ type: "answer", answer: data.answer }));
-                console.log("answer sended");
             }
         }
         if (data.type === "audio-vedio-toggle") {
-            console.log("in audio video toggle");
             const ws = (_h = usersMap.get(data.receiverId)) === null || _h === void 0 ? void 0 : _h.ws;
             if (ws) {
                 ws.send(JSON.stringify({
@@ -331,7 +328,6 @@ wss.on("connection", (ws, req) => __awaiter(void 0, void 0, void 0, function* ()
         }
         if (data.type === "someone-is-calling") {
             const ws = (_j = usersMap.get(data.callReceiverId)) === null || _j === void 0 ? void 0 : _j.ws;
-            console.log(data);
             if (ws) {
                 ws.send(JSON.stringify({
                     type: "someone-is-calling",
@@ -341,7 +337,6 @@ wss.on("connection", (ws, req) => __awaiter(void 0, void 0, void 0, function* ()
         }
         if (data.type === "call-status") {
             if (data.callStatus === "hang-up") {
-                console.log("hang ", data);
                 const ws = (_k = usersMap.get(data.callReceiverId)) === null || _k === void 0 ? void 0 : _k.ws;
                 if (ws) {
                     ws.send(JSON.stringify({

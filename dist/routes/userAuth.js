@@ -72,6 +72,7 @@ app.post("/sign-in", (req, res) => __awaiter(void 0, void 0, void 0, function* (
                 profileUrl: true,
                 name: true,
                 password: true,
+                publickey: true
             },
         });
         if (!user) {
@@ -112,7 +113,7 @@ app.post("/sign-in", (req, res) => __awaiter(void 0, void 0, void 0, function* (
 }));
 app.post("/sign-up", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { name, email, password, profileUrl } = req.body;
+        const { name, email, password, profileUrl, publicKey } = req.body;
         const parsedData = zod_1.singnUpSchema.safeParse(req.body);
         if (!parsedData.success) {
             const dataError = (0, helper_1.formatZodError)(parsedData.error.issues);
@@ -139,6 +140,7 @@ app.post("/sign-up", (req, res) => __awaiter(void 0, void 0, void 0, function* (
                 email: email,
                 password: hashedPassword,
                 profileUrl,
+                publickey: publicKey,
             },
         });
         (0, helper_1.sendToken)(res, user);
@@ -186,6 +188,7 @@ const verifyAccessToken = (req, res, next) => {
 };
 app.get("/get-user", verifyAccessToken, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
+        console.log("in get user");
         if (!req.user) {
             res.status(404).json({
                 success: false,
@@ -194,11 +197,11 @@ app.get("/get-user", verifyAccessToken, (req, res) => __awaiter(void 0, void 0, 
             return;
         }
         const userId = req.user.id;
-        const cachedUser = yield redis_1.default.get(`user:${userId}`);
-        if (cachedUser) {
-            res.status(200).json({ user: JSON.parse(cachedUser) });
-            return;
-        }
+        // const cachedUser = await redis.get(`user:${userId}`);
+        // if (cachedUser) {
+        //   res.status(200).json({ user: JSON.parse(cachedUser) });
+        //   return;
+        // }
         const user = yield prisma_1.prisma.user.findUnique({
             where: {
                 id: userId,
@@ -207,8 +210,10 @@ app.get("/get-user", verifyAccessToken, (req, res) => __awaiter(void 0, void 0, 
                 profileUrl: true,
                 name: true,
                 id: true,
+                publickey: true,
             },
         });
+        console.log("lolipop", user);
         if (!user) {
             res.status(404).json({ message: "User not found" });
             return;
@@ -231,6 +236,7 @@ app.get("/all-users", (req, res) => __awaiter(void 0, void 0, void 0, function* 
                 name: true,
                 email: true,
                 profileUrl: true,
+                publickey: true,
             },
             orderBy: {
                 createdAt: "asc",
