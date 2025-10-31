@@ -74,7 +74,7 @@ app.use((0, cors_1.default)({
 }));
 app.use((0, cookie_parser_1.default)());
 const server = http_1.default.createServer(app);
-const wss = new ws_1.WebSocketServer({ server });
+const wss = new ws_1.WebSocketServer({ server, path: "/chat-backend" });
 app.use("/user", userAuth_1.default);
 app.use("/chat", messages_1.default);
 app.use("/aws", aws_1.default);
