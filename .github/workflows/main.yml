@@ -18,7 +18,7 @@ jobs:
           host: 103.252.116.188
           username: root
           key: ${{ secrets.VPS_SSH_KEY }}
-          script: 
+          script: | 
             cd /root/chat-app-server
             git pull origin master
             npm install --production
