@@ -4,7 +4,6 @@ import http from "http";
 import cors from "cors";
 import { prisma } from "./utils/prisma";
 import userAuth from "./routes/userAuth";
-import redis from "./redis/redis";
 import Messages, {
   sendRecentChats,
 } from "./routes/messages";
@@ -49,7 +48,7 @@ const subscribeToChannel = async () => {
 subscribeToChannel(); 
 
 app.get("/", (req, res) => {
-  res.send("server is live");
+  res.send("server is live by ci/cd");
 });
 
 const subscribe = async () => {
@@ -66,7 +65,7 @@ const subscribe = async () => {
             receiverContent: data.receiverContent,
             senderContent: data.senderContent,
             receiverId: receiverId, 
-            senderId: data.senderId,
+            senderId: data.senderId, 
             isMedia:data.isMedia || false
           })
         );
