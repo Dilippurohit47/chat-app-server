@@ -48,7 +48,7 @@ const subscribeToChannel = async () => {
 subscribeToChannel(); 
 
 app.get("/", (req, res) => {
-  res.send("server is live by ci/cd");
+  res.send("server is live by ci/cd pipelines");
 });
 
 const subscribe = async () => {
