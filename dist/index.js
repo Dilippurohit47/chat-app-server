@@ -86,7 +86,7 @@ const subscribeToChannel = () => __awaiter(void 0, void 0, void 0, function* () 
 });
 subscribeToChannel();
 app.get("/", (req, res) => {
-    res.send("server is live by ci/cd pipelines");
+    res.send("server is live by ci/cd pipelines v1");
 });
 const subscribe = () => __awaiter(void 0, void 0, void 0, function* () {
     yield subsciberRedis_1.default.subscribe("messages", (msg) => __awaiter(void 0, void 0, void 0, function* () {
