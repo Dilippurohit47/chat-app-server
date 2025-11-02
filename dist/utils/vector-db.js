@@ -182,7 +182,7 @@ function createEmbeddings() {
         }
     });
 }
-createEmbeddings();
+//  createEmbeddings()
 const getCollection = () => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const result = yield client.getCollections();
