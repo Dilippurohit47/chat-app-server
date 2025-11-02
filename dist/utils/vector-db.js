@@ -25,13 +25,20 @@ const infoForEmbedding = [
             category: "education",
             text: "qaulification what is your studies  "
         }
+    }, {
+        payload: {
+            field: "Greeting",
+            value: "hello I am Fullstack developer how can i help you today",
+            categorry: "greetings",
+            text: "hello Hie good morning  Hy "
+        }
     },
     {
         payload: {
             field: "experience",
-            value: "1 years in fullstack development",
+            value: "1+ years in fullstack development at hostel co ",
             category: "career",
-            text: "experience how much experience do you have "
+            text: "experience how much experience do you have  "
         }
     },
     {
@@ -81,6 +88,69 @@ const infoForEmbedding = [
             category: "College",
             text: "college university school",
         }
+    }, // ✅ Add these to your infoForEmbedding array
+    // FULL STACK SUMMARY
+    {
+        payload: {
+            field: "fullstack-overview",
+            value: "I am a full-stack developer experienced in building scalable web apps end-to-end using React, Node.js, Go, PostgreSQL, Redis, WebSockets, Docker and AWS. I can handle frontend, backend, database, deployment, testing and monitoring.",
+            category: "skills",
+            text: "full stack skills fullstack what stack do you use what technologies do you work with"
+        }
+    },
+    // FULL STACK SKILLS WITH DEPTH
+    {
+        payload: {
+            field: "fullstack-details",
+            value: "On the frontend, I work with React, TypeScript, Zustand, Tailwind, Next.js and performance optimizations like lazy loading and memoization. On the backend, I build APIs using Node.js, Express, Go, Prisma ORM and PostgreSQL with Redis caching and WebSocket real-time communication.",
+            category: "skills",
+            text: "explain your full stack skills frontend backend what frameworks do you use"
+        }
+    },
+    // BACKEND SKILLS
+    {
+        payload: {
+            field: "backend-skills",
+            value: "Backend skills include Node.js, Express, Go, REST APIs, WebSockets, authentication systems, JWT refresh-access tokens, RBAC, Redis caching, background jobs, rate limiting and secure production API design.",
+            category: "skills",
+            text: "backend experience api building nodejs express go rest websockets auth"
+        }
+    },
+    // DEVOPS SKILLS
+    {
+        payload: {
+            field: "devops",
+            value: "I have DevOps experience with Docker, Nginx reverse proxy, PM2/Node clustering, GitHub Actions CI/CD pipelines, Ubuntu VPS setup, domain + SSL setup, log monitoring, and horizontal scaling using Redis Pub/Sub.",
+            category: "devops",
+            text: "devops skills deployment docker ci cd github actions server vps nginx reverse proxy"
+        }
+    },
+    // DEPLOYMENT EXPERIENCE
+    {
+        payload: {
+            field: "deployment",
+            value: "I deploy apps on cloud VPS (Ubuntu) with Docker containers, Nginx reverse proxy, Let's Encrypt SSL, PostgreSQL database hosting, Redis caching and automated zero-downtime updates using GitHub Actions.",
+            category: "devops",
+            text: "how do you deploy apps where do you host production deployment pipeline"
+        }
+    },
+    // INTERNSHIP
+    {
+        payload: {
+            field: "internship",
+            value: "I worked as a full-stack developer intern at HostelCo where I built a real-time hostel booking system with live availability, PostgreSQL schema design, caching, admin panel, WebSocket notifications and S3 image uploads.",
+            category: "internship",
+            text: "internship where did you work what did you do in internship hostelco role"
+        }
+    },
+    // INTERNSHIP TECHNICAL DETAILS
+    {
+        payload: {
+            field: "internship-details",
+            value: "During my internship I implemented role-based authentication, Redis caching layer, booking conflict prevention logic, automated backups, and API performance improvements that reduced query time by 70%.",
+            category: "internship",
+            text: "explain your internship responsibilities achievements tasks what you built"
+        }
     }
 ];
 function createEmbeddings() {
@@ -112,7 +182,7 @@ function createEmbeddings() {
         }
     });
 }
-//  createEmbeddings()
+createEmbeddings();
 const getCollection = () => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const result = yield client.getCollections();
@@ -140,7 +210,6 @@ exports.createCollection = createCollection;
 const getInfoFromCollection = (query) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     try {
-        console.log("query", query);
         const getEmbeddedFromQuery = yield ai.models.embedContent({
             model: "gemini-embedding-001",
             contents: query,

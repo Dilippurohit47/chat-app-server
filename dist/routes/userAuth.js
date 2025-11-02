@@ -143,10 +143,18 @@ app.post("/sign-up", (req, res) => __awaiter(void 0, void 0, void 0, function* (
                 publickey: publicKey,
             },
         });
-        (0, helper_1.sendToken)(res, user);
+        const refreshToken = (0, helper_1.sendToken)(res, user);
+        const updatedUser = yield prisma_1.prisma.user.update({
+            where: {
+                id: user.id
+            }, data: {
+                refreshToken: refreshToken
+            }
+        });
         res.status(200).json({
             message: "User created Successfully",
-            user,
+            token: refreshToken,
+            user: updatedUser,
         });
     }
     catch (error) {

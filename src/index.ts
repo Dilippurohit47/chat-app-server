@@ -21,9 +21,9 @@ import { getInfoFromCollection } from "./utils/vector-db";
 
 app.use(express.json());
 
-app.use(
+app.use( 
   cors({
-    origin: [
+    origin: [ 
       "http://localhost:5173",  
       "https://chat-app-client-tawny.vercel.app",
     ],    
@@ -33,7 +33,7 @@ app.use(
 );
 app.use(cookieParser());
 const server = http.createServer(app);
-const wss = new WebSocketServer({ server, path: "/chat-backend" });
+const wss = new WebSocketServer({ server });  
 
 app.use("/user", userAuth); 
 app.use("/chat", Messages);
@@ -41,13 +41,13 @@ app.use("/aws", awsRoute);
 app.use("/group", groupRoute);
 app.use("/chat-setting", Chat);
 const usersMap = new Map();
-
-const subscribeToChannel = async () => {
-  await connectSubscriber();
+ 
+const subscribeToChannel = async () => { 
+  await connectSubscriber();    
 };
-subscribeToChannel(); 
-
-app.get("/", (req, res) => {
+subscribeToChannel();   
+ 
+app.get("/", (req, res) => {  
   res.send("server is live by ci/cd pipelines v1");
 });
 
@@ -56,7 +56,7 @@ const subscribe = async () => {
     const data = JSON.parse(msg.toString());
     if (data.type === "personal-msg") {
       const receiverId = data.receiverId;
-
+  
       if (usersMap.has(receiverId)) {
         let { ws } = usersMap.get(receiverId);
         ws.send(

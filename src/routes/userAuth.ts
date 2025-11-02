@@ -1,7 +1,7 @@
 import express, { NextFunction, Request, Response } from "express";
 import { prisma } from "../utils/prisma";
 import { formatZodError, JWT_PASSWORD, sendToken } from "../utils/helper";
-import jwt, { JwtPayload } from "jsonwebtoken";
+import jwt, { JwtPayload, TokenExpiredError } from "jsonwebtoken";
 import { singnUpSchema } from "../types/zod";
 import redis from "../redis/redis";
 import { google } from "googleapis";
@@ -43,7 +43,7 @@ const authMiddleware = async (
         success: false,
         message: "Unauthorized",
       });
-      return;
+      return; 
     }
 
     if (typeof decoded === "string") {
@@ -155,10 +155,20 @@ app.post("/sign-up", async (req: Request, res: Response) => {
       },
     });
 
-    sendToken(res, user);
+   const refreshToken = sendToken(res, user);
+
+   const updatedUser = await prisma.user.update({
+    where:{
+      id:user.id
+    },data:{
+      refreshToken:refreshToken
+    }
+   })
+
     res.status(200).json({
       message: "User created Successfully",
-      user,
+      token:refreshToken,
+      user:updatedUser,
     });
   } catch (error) {
     console.log(error);
@@ -216,8 +226,8 @@ app.get("/get-user", verifyAccessToken, async (req: Request, res: Response) => {
     //   res.status(200).json({ user: JSON.parse(cachedUser) });
     //   return;
     // }
-    const user = await prisma.user.findUnique({
-      where: {
+    const user = await prisma.user.findUnique({  
+      where: { 
         id: userId,
       },
       select: {

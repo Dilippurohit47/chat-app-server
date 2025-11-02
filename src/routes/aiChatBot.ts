@@ -24,9 +24,7 @@ Always act as if you are chatting as Dilip Purohit.
 user's query : ${query}
 Dilip Data :${userData}
 `;
-
     const response = await model.generateContent(SYSTEM_PROMPT);
-
     console.log(response.response.text());
     return response.response.text();
 
