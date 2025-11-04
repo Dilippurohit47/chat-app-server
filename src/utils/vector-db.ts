@@ -192,7 +192,7 @@ console.debug("storing points in vector db",operationInfo);
 }
 }
 
-//  createEmbeddings()
+//  ecreateEmbeddings()
 
 
 const getCollection = async() =>{

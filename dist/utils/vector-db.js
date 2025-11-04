@@ -169,7 +169,7 @@ function createEmbeddings() {
                 return;
             }
             const embeddedText = response === null || response === void 0 ? void 0 : response.embeddings;
-            const operationInfo = yield client.upsert("dilip_collection", {
+            const operationInfo = yield client.upsert("dilip_collection", { 
                 wait: true,
                 points: infoForEmbedding.map((val, index) => {
                     return { id: index, vector: embeddedText[index].values, payload: val.payload };
@@ -182,7 +182,7 @@ function createEmbeddings() {
         }
     });
 }
-//  createEmbeddings()
+//  ecreateEmbeddings()
 const getCollection = () => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const result = yield client.getCollections();

@@ -196,7 +196,6 @@ const verifyAccessToken = (req, res, next) => {
 };
 app.get("/get-user", verifyAccessToken, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        console.log("in get user");
         if (!req.user) {
             res.status(404).json({
                 success: false,
@@ -205,11 +204,11 @@ app.get("/get-user", verifyAccessToken, (req, res) => __awaiter(void 0, void 0, 
             return;
         }
         const userId = req.user.id;
-        // const cachedUser = await redis.get(`user:${userId}`);
-        // if (cachedUser) {
-        //   res.status(200).json({ user: JSON.parse(cachedUser) });
-        //   return;
-        // }
+        const cachedUser = yield redis_1.default.get(`user:${userId}`);
+        if (cachedUser) {
+            res.status(200).json({ user: JSON.parse(cachedUser) });
+            return;
+        }
         const user = yield prisma_1.prisma.user.findUnique({
             where: {
                 id: userId,
@@ -221,7 +220,6 @@ app.get("/get-user", verifyAccessToken, (req, res) => __awaiter(void 0, void 0, 
                 publickey: true,
             },
         });
-        console.log("lolipop", user);
         if (!user) {
             res.status(404).json({ message: "User not found" });
             return;
