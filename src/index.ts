@@ -20,6 +20,8 @@ const app = express();
 import {getChatBotResponse} from  "./routes/aiChatBot"
 import { getInfoFromCollection } from "./utils/vector-db";
 import redis from "./redis/redis";
+
+
  
 app.use(express.json());
 
@@ -48,7 +50,7 @@ const apiLimiter = rateLimit({
 
 
 app.use("/user", apiLimiter ,  userAuth); 
-app.use("/chat",apiLimiter , Messages);
+app.use("/chat",apiLimiter , Messages); 
 app.use("/aws",apiLimiter , awsRoute);
 app.use("/group",apiLimiter, groupRoute);
 app.use("/chat-setting",apiLimiter, Chat); 
@@ -67,6 +69,8 @@ app.get("/", (req, res) => {
 const subscribe = async () => {
   await subscriber.subscribe("messages", async (msg) => {
     const data = JSON.parse(msg.toString());
+
+    if (data.type === "ping") return;
     if (data.type === "personal-msg") {
       const receiverId = data.receiverId;
   
@@ -223,9 +227,35 @@ const subscribe = async () => {
   });
 };
 subscribe();
+
+setInterval(() => {
+  wss.clients.forEach((ws) => {
+    // @ts-ignore
+    if (!ws.isAlive) {
+      ws.terminate();
+      return;
+    }
+    // @ts-ignore
+    ws.isAlive = false;
+    ws.ping();
+  });
+}, 30000);
+
 wss.on("connection", async (ws, req) => {
   
   console.log("✅ client connected, total:", wss.clients.size);
+
+// @ts-ignore
+  ws.isAlive = true;
+  
+ws.on("pong", () => {
+// @ts-ignore
+  ws.isAlive = true;
+});
+
+
+
+
   ws.on("message", async (m) => {
     await publisher.publish("messages", m.toString());
     const data = JSON.parse(m.toString());

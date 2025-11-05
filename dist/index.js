@@ -99,6 +99,8 @@ app.get("/", (req, res) => {
 const subscribe = () => __awaiter(void 0, void 0, void 0, function* () {
     yield subsciberRedis_1.default.subscribe("messages", (msg) => __awaiter(void 0, void 0, void 0, function* () {
         const data = JSON.parse(msg.toString());
+        if (data.type === "ping")
+            return;
         if (data.type === "personal-msg") {
             const receiverId = data.receiverId;
             if (usersMap.has(receiverId)) {
@@ -243,9 +245,26 @@ const subscribe = () => __awaiter(void 0, void 0, void 0, function* () {
     }));
 });
 subscribe();
+setInterval(() => {
+    wss.clients.forEach((ws) => {
+        // @ts-ignore
+        if (!ws.isAlive) {
+            ws.terminate();
+            return;
+        }
+        // @ts-ignore
+        ws.isAlive = false;
+        ws.ping();
+    });
+}, 30000);
 wss.on("connection", (ws, req) => __awaiter(void 0, void 0, void 0, function* () {
-    console.log("✅ client connected to :", process.env.PORT);
     console.log("✅ client connected, total:", wss.clients.size);
+    // @ts-ignore
+    ws.isAlive = true;
+    ws.on("pong", () => {
+        // @ts-ignore
+        ws.isAlive = true;
+    });
     ws.on("message", (m) => __awaiter(void 0, void 0, void 0, function* () {
         var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l;
         yield publisherRedis_1.default.publish("messages", m.toString());
