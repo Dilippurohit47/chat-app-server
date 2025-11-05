@@ -148,6 +148,26 @@ const subscribe = async () => {
         }
       });
     }
+
+       if(data.type === "typing"){
+      const ws = usersMap.get(data.receiverId)?.ws
+      if(ws){
+        ws.send(JSON.stringify({
+          type:"user-is-typing",
+          senderId:data.senderId
+        }))
+      }
+    }
+    if(data.type === "typing-stop"){
+      const ws = usersMap.get(data.receiverId)?.ws
+      if(ws){
+        ws.send(JSON.stringify({
+          type:"user-stopped-typing",
+          senderId:data.senderId
+        }))
+      }
+    }
+
     if (data.type === "send-groups") {
       const userId = data.userId;
       const groups = await prisma.group.findMany({
@@ -243,7 +263,7 @@ setInterval(() => {
 
 wss.on("connection", async (ws, req) => {
   
-  console.log("✅ client connected, total:", wss.clients.size);
+  console.log("✅ client connected, total:", process.env.PORT);
 
 // @ts-ignore
   ws.isAlive = true;
@@ -292,24 +312,7 @@ for(const id of connectedUsers){
         })
       );
     }
-    if(data.type === "typing"){
-      const ws = usersMap.get(data.receiverId)?.ws
-      if(ws){
-        ws.send(JSON.stringify({
-          type:"user-is-typing",
-          senderId:data.senderId
-        }))
-      }
-    }
-    if(data.type === "typing-stop"){
-      const ws = usersMap.get(data.receiverId)?.ws
-      if(ws){
-        ws.send(JSON.stringify({
-          type:"user-stopped-typing",
-          senderId:data.senderId
-        }))
-      }
-    }
+ 
 
     if(data.type === "get-chatbot-response"){
       const query = data.query

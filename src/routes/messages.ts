@@ -40,7 +40,7 @@ import express, { Request, Response } from "express";
       });
 
       await prisma.deletedChat.deleteMany({
-        where:{
+        where:{ 
           userId:{
             in:[senderId,receiverId]
           },
@@ -298,27 +298,40 @@ app.get("/get-recent-chats", async (req, res) => {
       message: "Internal server error",
     });
   }
-});
-
+}); 
+ 
 
 interface DeleteChatBody {
-  userId:string,
+  senderId:string,
+  receiverId:string,
   chatId:string,
 }
 app.put("/update-unreadmessage-count", async (req:Request<{},{},DeleteChatBody>, res:Response) => {
-  try {
-    const { userId, chatId } = req.body;
-    const chat = await prisma.chat.findUnique({
+  try { 
+    const { senderId, chatId , receiverId } = req.body;
+    let chat ;
+    if(chatId){
+chat = await prisma.chat.findUnique({
       where: {
         id: chatId,
       },
     });
+      
+    } 
+    
+    if(!chatId){
+      chat = await  prisma.chat.findFirst({
+        where:{
+          senderId:senderId,
+          receiverId:receiverId,  
+        }
+      }) }
 
     const unreadCount = chat?.unreadCount as {userId:string} | null
-    if ( unreadCount && unreadCount.userId === userId) {
+    if ( unreadCount && unreadCount.userId === receiverId) {
       await prisma.chat.update({
         where: {
-          id: chatId,
+          id: chatId || chat.id,
         },
         data: {
           unreadCount: {
@@ -332,7 +345,7 @@ app.put("/update-unreadmessage-count", async (req:Request<{},{},DeleteChatBody>,
       message: "Unread message count updated successfully",
     });
   } catch (error) {
-    console.log(error);
+    console.log("error in updating unread count",error);
     res.status(500).json({
       message: "Internal server error",
     });
@@ -387,8 +400,8 @@ app.put("/update-unreadmessage-count", async (req:Request<{},{},DeleteChatBody>,
 // };
 
 export const sendRecentChats = async (userId: string) => {
-  try {
-    if (!userId) {
+  try {  
+    if (!userId) { 
       return;
     }
     const chats = await prisma.chat.findMany({

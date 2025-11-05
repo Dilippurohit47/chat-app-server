@@ -98,6 +98,7 @@ app.get("/", (req, res) => {
 });
 const subscribe = () => __awaiter(void 0, void 0, void 0, function* () {
     yield subsciberRedis_1.default.subscribe("messages", (msg) => __awaiter(void 0, void 0, void 0, function* () {
+        var _a, _b;
         const data = JSON.parse(msg.toString());
         if (data.type === "ping")
             return;
@@ -169,6 +170,24 @@ const subscribe = () => __awaiter(void 0, void 0, void 0, function* () {
                     }));
                 }
             });
+        }
+        if (data.type === "typing") {
+            const ws = (_a = usersMap.get(data.receiverId)) === null || _a === void 0 ? void 0 : _a.ws;
+            if (ws) {
+                ws.send(JSON.stringify({
+                    type: "user-is-typing",
+                    senderId: data.senderId
+                }));
+            }
+        }
+        if (data.type === "typing-stop") {
+            const ws = (_b = usersMap.get(data.receiverId)) === null || _b === void 0 ? void 0 : _b.ws;
+            if (ws) {
+                ws.send(JSON.stringify({
+                    type: "user-stopped-typing",
+                    senderId: data.senderId
+                }));
+            }
         }
         if (data.type === "send-groups") {
             const userId = data.userId;
@@ -258,7 +277,7 @@ setInterval(() => {
     });
 }, 30000);
 wss.on("connection", (ws, req) => __awaiter(void 0, void 0, void 0, function* () {
-    console.log("✅ client connected, total:", wss.clients.size);
+    console.log("✅ client connected, total:", process.env.PORT);
     // @ts-ignore
     ws.isAlive = true;
     ws.on("pong", () => {
@@ -266,7 +285,7 @@ wss.on("connection", (ws, req) => __awaiter(void 0, void 0, void 0, function* ()
         ws.isAlive = true;
     });
     ws.on("message", (m) => __awaiter(void 0, void 0, void 0, function* () {
-        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l;
+        var _a, _b, _c, _d, _e, _f, _g, _h, _j;
         yield publisherRedis_1.default.publish("messages", m.toString());
         const data = JSON.parse(m.toString());
         if (data.type === "user-info") {
@@ -294,27 +313,9 @@ wss.on("connection", (ws, req) => __awaiter(void 0, void 0, void 0, function* ()
                 chats: recentChats,
             }));
         }
-        if (data.type === "typing") {
-            const ws = (_b = usersMap.get(data.receiverId)) === null || _b === void 0 ? void 0 : _b.ws;
-            if (ws) {
-                ws.send(JSON.stringify({
-                    type: "user-is-typing",
-                    senderId: data.senderId
-                }));
-            }
-        }
-        if (data.type === "typing-stop") {
-            const ws = (_c = usersMap.get(data.receiverId)) === null || _c === void 0 ? void 0 : _c.ws;
-            if (ws) {
-                ws.send(JSON.stringify({
-                    type: "user-stopped-typing",
-                    senderId: data.senderId
-                }));
-            }
-        }
         if (data.type === "get-chatbot-response") {
             const query = data.query;
-            const ws = (_d = usersMap.get(data === null || data === void 0 ? void 0 : data.receiverId)) === null || _d === void 0 ? void 0 : _d.ws;
+            const ws = (_b = usersMap.get(data === null || data === void 0 ? void 0 : data.receiverId)) === null || _b === void 0 ? void 0 : _b.ws;
             const personalData = yield (0, vector_db_1.getInfoFromCollection)(query);
             const answer = yield (0, aiChatBot_1.getChatBotResponse)(query || "hello", personalData);
             if (ws) {
@@ -326,25 +327,25 @@ wss.on("connection", (ws, req) => __awaiter(void 0, void 0, void 0, function* ()
             }
         }
         if (data.type === "offer") {
-            const ws = (_e = usersMap.get(data.receiverId)) === null || _e === void 0 ? void 0 : _e.ws;
+            const ws = (_c = usersMap.get(data.receiverId)) === null || _c === void 0 ? void 0 : _c.ws;
             if (ws) {
                 ws.send(JSON.stringify({ type: "offer", offer: data.offer }));
             }
         }
         if (data.type === "ice-candidate") {
-            const ws = (_f = usersMap.get(data.receiverId)) === null || _f === void 0 ? void 0 : _f.ws;
+            const ws = (_d = usersMap.get(data.receiverId)) === null || _d === void 0 ? void 0 : _d.ws;
             if (ws) {
                 ws.send(JSON.stringify({ type: "ice-candidate", candidate: data.candidate }));
             }
         }
         if (data.type === "answer") {
-            const ws = (_g = usersMap.get(data.receiverId)) === null || _g === void 0 ? void 0 : _g.ws;
+            const ws = (_e = usersMap.get(data.receiverId)) === null || _e === void 0 ? void 0 : _e.ws;
             if (ws) {
                 ws.send(JSON.stringify({ type: "answer", answer: data.answer }));
             }
         }
         if (data.type === "audio-vedio-toggle") {
-            const ws = (_h = usersMap.get(data.receiverId)) === null || _h === void 0 ? void 0 : _h.ws;
+            const ws = (_f = usersMap.get(data.receiverId)) === null || _f === void 0 ? void 0 : _f.ws;
             if (ws) {
                 ws.send(JSON.stringify({
                     audio: data.audio,
@@ -354,7 +355,7 @@ wss.on("connection", (ws, req) => __awaiter(void 0, void 0, void 0, function* ()
             }
         }
         if (data.type === "someone-is-calling") {
-            const ws = (_j = usersMap.get(data.callReceiverId)) === null || _j === void 0 ? void 0 : _j.ws;
+            const ws = (_g = usersMap.get(data.callReceiverId)) === null || _g === void 0 ? void 0 : _g.ws;
             if (ws) {
                 ws.send(JSON.stringify({
                     type: "someone-is-calling",
@@ -364,7 +365,7 @@ wss.on("connection", (ws, req) => __awaiter(void 0, void 0, void 0, function* ()
         }
         if (data.type === "call-status") {
             if (data.callStatus === "hang-up") {
-                const ws = (_k = usersMap.get(data.callReceiverId)) === null || _k === void 0 ? void 0 : _k.ws;
+                const ws = (_h = usersMap.get(data.callReceiverId)) === null || _h === void 0 ? void 0 : _h.ws;
                 if (ws) {
                     ws.send(JSON.stringify({
                         type: "client-call-status",
@@ -373,7 +374,7 @@ wss.on("connection", (ws, req) => __awaiter(void 0, void 0, void 0, function* ()
                 }
             }
             if (data.callStatus === "accepted") {
-                const ws = (_l = usersMap.get(data.receiverId)) === null || _l === void 0 ? void 0 : _l.ws;
+                const ws = (_j = usersMap.get(data.receiverId)) === null || _j === void 0 ? void 0 : _j.ws;
                 if (ws) {
                     ws.send(JSON.stringify({
                         type: "client-call-status",

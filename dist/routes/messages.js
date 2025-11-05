@@ -283,17 +283,28 @@ app.get("/get-recent-chats", (req, res) => __awaiter(void 0, void 0, void 0, fun
 }));
 app.put("/update-unreadmessage-count", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { userId, chatId } = req.body;
-        const chat = yield prisma_1.prisma.chat.findUnique({
-            where: {
-                id: chatId,
-            },
-        });
-        const unreadCount = chat === null || chat === void 0 ? void 0 : chat.unreadCount;
-        if (unreadCount && unreadCount.userId === userId) {
-            yield prisma_1.prisma.chat.update({
+        const { senderId, chatId, receiverId } = req.body;
+        let chat;
+        if (chatId) {
+            chat = yield prisma_1.prisma.chat.findUnique({
                 where: {
                     id: chatId,
+                },
+            });
+        }
+        if (!chatId) {
+            chat = yield prisma_1.prisma.chat.findFirst({
+                where: {
+                    senderId: senderId,
+                    receiverId: receiverId,
+                }
+            });
+        }
+        const unreadCount = chat === null || chat === void 0 ? void 0 : chat.unreadCount;
+        if (unreadCount && unreadCount.userId === receiverId) {
+            yield prisma_1.prisma.chat.update({
+                where: {
+                    id: chatId || chat.id,
                 },
                 data: {
                     unreadCount: {
@@ -308,7 +319,7 @@ app.put("/update-unreadmessage-count", (req, res) => __awaiter(void 0, void 0, v
         });
     }
     catch (error) {
-        console.log(error);
+        console.log("error in updating unread count", error);
         res.status(500).json({
             message: "Internal server error",
         });
