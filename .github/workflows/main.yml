@@ -22,4 +22,6 @@ jobs:
             cd /root/chat-app-server
             git pull origin master
             npm install --production
-            pm2 restart chat-backend-*
+            pm2 restart chat-backend-1
+            pm2 restart chat-backend-2
+            pm2 restart chat-backend-3
