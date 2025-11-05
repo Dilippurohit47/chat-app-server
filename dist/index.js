@@ -244,6 +244,7 @@ const subscribe = () => __awaiter(void 0, void 0, void 0, function* () {
 });
 subscribe();
 wss.on("connection", (ws, req) => __awaiter(void 0, void 0, void 0, function* () {
+    console.log("✅ client connected to :", process.env.PORT);
     console.log("✅ client connected, total:", wss.clients.size);
     ws.on("message", (m) => __awaiter(void 0, void 0, void 0, function* () {
         var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l;
