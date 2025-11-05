@@ -22,6 +22,7 @@ prisma/migrations/*/steps.json
 prisma/migrations/*/migration.sql
 # (optional: keep migration.sql if you want migrations tracked)
 
+
 # Redis / cache
 dump.rdb
 *.rdb

@@ -6,7 +6,6 @@ import express, { Request, Response } from "express";
   receiverContent: string,
   senderContent:string
 ) => {
-  console.log("upsert recent chats ",senderId ,receiverId)
   try {
     let chat = await prisma.chat.findFirst({
       where: {
@@ -78,7 +77,6 @@ export const saveMessage = async (
 ) => {
   try { 
  
-    console.log("save message" ,senderId ,receiverId)
 const chat  = await upsertRecentChats(senderId,receiverId,receiverContent ,senderContent)
 if(!chat) return
 await prisma.messages.create({
@@ -408,7 +406,6 @@ export const sendRecentChats = async (userId: string) => {
         user2: true,
       },
     });
-console.log("chats from recent db",chats)
     const formattedChats = chats.map((chat) => {
       const otherUser = chat.user1.id === userId ? chat.user2 : chat.user1;
       return {

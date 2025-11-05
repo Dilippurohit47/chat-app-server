@@ -60,6 +60,7 @@ const group_1 = __importDefault(require("./routes/group"));
 const publisherRedis_1 = __importDefault(require("./publisherRedis"));
 const subsciberRedis_1 = __importStar(require("./subsciberRedis"));
 require("./utils/vector-db");
+const express_rate_limit_1 = __importDefault(require("express-rate-limit"));
 const app = (0, express_1.default)();
 const aiChatBot_1 = require("./routes/aiChatBot");
 const vector_db_1 = require("./utils/vector-db");
@@ -76,11 +77,17 @@ app.use((0, cors_1.default)({
 app.use((0, cookie_parser_1.default)());
 const server = http_1.default.createServer(app);
 const wss = new ws_1.WebSocketServer({ server });
-app.use("/user", userAuth_1.default);
-app.use("/chat", messages_1.default);
-app.use("/aws", aws_1.default);
-app.use("/group", group_1.default);
-app.use("/chat-setting", chat_1.default);
+// app.set("trust proxy", 1); 
+const apiLimiter = (0, express_rate_limit_1.default)({
+    windowMs: 60 * 1000,
+    max: 100,
+    message: "Too many requests, slow down!",
+});
+app.use("/user", apiLimiter, userAuth_1.default);
+app.use("/chat", apiLimiter, messages_1.default);
+app.use("/aws", apiLimiter, aws_1.default);
+app.use("/group", apiLimiter, group_1.default);
+app.use("/chat-setting", apiLimiter, chat_1.default);
 const usersMap = new Map();
 const subscribeToChannel = () => __awaiter(void 0, void 0, void 0, function* () {
     yield (0, subsciberRedis_1.connectSubscriber)();
@@ -106,11 +113,9 @@ const subscribe = () => __awaiter(void 0, void 0, void 0, function* () {
                 }));
             }
             if (data.senderId || receiverId || data.message) {
-                console.log("ids", data.senderId, data.receiverId);
                 yield (0, messages_2.saveMessage)(data.senderId, receiverId, data.message, data.isMedia, data.receiverContent, data.senderContent);
                 const senderRecentChats = yield (0, messages_1.sendRecentChats)(data.senderId);
                 const receiverRecentChats = yield (0, messages_1.sendRecentChats)(data.receiverId);
-                console.log("recent chats", messages_1.sendRecentChats, receiverRecentChats);
                 if (usersMap.has(data.senderId)) {
                     let senderWs = usersMap.get(data.senderId).ws;
                     if (senderWs && senderWs.readyState === 1) {
@@ -239,6 +244,7 @@ const subscribe = () => __awaiter(void 0, void 0, void 0, function* () {
 });
 subscribe();
 wss.on("connection", (ws, req) => __awaiter(void 0, void 0, void 0, function* () {
+    console.log("✅ client connected, total:", wss.clients.size);
     ws.on("message", (m) => __awaiter(void 0, void 0, void 0, function* () {
         var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l;
         yield publisherRedis_1.default.publish("messages", m.toString());

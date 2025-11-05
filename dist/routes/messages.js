@@ -16,7 +16,6 @@ exports.sendRecentChats = exports.saveMessage = exports.upsertRecentChats = void
 const prisma_1 = require("../utils/prisma");
 const express_1 = __importDefault(require("express"));
 const upsertRecentChats = (senderId, receiverId, receiverContent, senderContent) => __awaiter(void 0, void 0, void 0, function* () {
-    console.log("upsert recent chats ", senderId, receiverId);
     try {
         let chat = yield prisma_1.prisma.chat.findFirst({
             where: {
@@ -79,7 +78,6 @@ const upsertRecentChats = (senderId, receiverId, receiverContent, senderContent)
 exports.upsertRecentChats = upsertRecentChats;
 const saveMessage = (senderId, receiverId, content, isMedia, receiverContent, senderContent) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        console.log("save message", senderId, receiverId);
         const chat = yield (0, exports.upsertRecentChats)(senderId, receiverId, receiverContent, senderContent);
         if (!chat)
             return;
@@ -381,7 +379,6 @@ const sendRecentChats = (userId) => __awaiter(void 0, void 0, void 0, function* 
                 user2: true,
             },
         });
-        console.log("chats from recent db", chats);
         const formattedChats = chats.map((chat) => {
             const otherUser = chat.user1.id === userId ? chat.user2 : chat.user1;
             return Object.assign({ chatId: chat.id, lastMessageForReceiver: chat.lastMessageForReceiver, lastMessageForSender: chat.lastMessageForSender, senderId: chat.senderId, receiverId: chat.receiverId, lastMessageCreatedAt: chat.lastMessageCreatedAt, unreadCount: chat.unreadCount }, otherUser);

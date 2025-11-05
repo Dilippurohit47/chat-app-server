@@ -15,11 +15,12 @@ import groupRoute from "./routes/group";
 import publisher from "./publisherRedis";
 import subscriber, { connectSubscriber } from "./subsciberRedis";
 import "./utils/vector-db"
+import rateLimit from "express-rate-limit";
 const app = express(); 
 import {getChatBotResponse} from  "./routes/aiChatBot"
 import { getInfoFromCollection } from "./utils/vector-db";
 import redis from "./redis/redis";
-
+ 
 app.use(express.json());
 
 app.use( 
@@ -36,21 +37,32 @@ app.use(cookieParser());
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server });  
 
-app.use("/user", userAuth); 
-app.use("/chat", Messages);
-app.use("/aws", awsRoute);
-app.use("/group", groupRoute);
-app.use("/chat-setting", Chat);
+// app.set("trust proxy", 1); 
+const apiLimiter = rateLimit({
+  windowMs: 60 * 1000, 
+  max: 100 , 
+  message: "Too many requests, slow down!",
+});
+
+
+
+
+app.use("/user", apiLimiter ,  userAuth); 
+app.use("/chat",apiLimiter , Messages);
+app.use("/aws",apiLimiter , awsRoute);
+app.use("/group",apiLimiter, groupRoute);
+app.use("/chat-setting",apiLimiter, Chat); 
 const usersMap = new Map();
  
 const subscribeToChannel = async () => { 
   await connectSubscriber();    
 };
-subscribeToChannel();    
- 
+
+subscribeToChannel();     
 app.get("/", (req, res) => {  
   res.send("server is live by ci/cd pipelines v1");
 });
+
 
 const subscribe = async () => {
   await subscriber.subscribe("messages", async (msg) => {
@@ -72,11 +84,9 @@ const subscribe = async () => {
         );
       }
       if (data.senderId || receiverId || data.message) {
-        console.log("ids",data.senderId , data.receiverId)
         await saveMessage(data.senderId, receiverId, data.message, data.isMedia ,data.receiverContent ,data.senderContent);
         const senderRecentChats = await sendRecentChats(data.senderId);
         const receiverRecentChats = await sendRecentChats(data.receiverId);
-        console.log("recent chats",sendRecentChats  , receiverRecentChats)
         if (usersMap.has(data.senderId)) {
           let senderWs = usersMap.get(data.senderId).ws;
           if (senderWs && senderWs.readyState === 1) {
@@ -214,6 +224,8 @@ const subscribe = async () => {
 };
 subscribe();
 wss.on("connection", async (ws, req) => {
+  
+  console.log("✅ client connected, total:", wss.clients.size);
   ws.on("message", async (m) => {
     await publisher.publish("messages", m.toString());
     const data = JSON.parse(m.toString());
