@@ -1,43 +1,37 @@
-# 💬 Full Stack Chat App — (Frontend + Backend)
+# 💬 Chat App — Backend (Node.js + TypeScript)
 
-A complete real-time chat application built with **React + Node.js + TypeScript**, featuring WebSockets, JWT auth, chatbot (Gemini AI), Redis caching, vector DB memory, WebRTC calling, Docker deployment, and CI/CD automation — all hosted on a VPS.
-
----
-
-## 🛠 Tech Stack (Full System)
-
-- **Frontend:** React, WebSockets, Redux, Tailwind CSS
-- **Backend:** Node.js, TypeScript, Express, WebSockets
-- **Database:** PostgreSQL + Prisma ORM
-- **Cache / PubSub:** Redis
-- **AI:** Google Gemini API
-- **Vector DB:** Qdrant / Pinecone (semantic context)
-- **Calls:** WebRTC Signaling
-- **Deployment:** Docker + VPS + Nginx
-- **CI/CD:** GitHub Actions
-- **Others:** JWT Auth, Secure Cookies
+A powerful real-time backend for a chat application built with **Node.js + TypeScript**, featuring WebSockets messaging, JWT authentication, AI chatbot integration (Gemini), Redis caching, vector DB semantic memory, WebRTC signaling, Docker, CI/CD, and PostgreSQL database — fully deployed on a VPS.
 
 ---
 
-# 🚀 Clone & Setup (Both Projects)
+## 🛠 Tech Stack
 
-## 🔹 Frontend Setup
+- Node.js + TypeScript  
+- Express (HTTP Server)  
+- WebSockets (WS)  
+- PostgreSQL + Prisma ORM  
+- Redis (Cache + Pub/Sub)  
+- Vector Database (Qdrant / Pinecone)  
+- Gemini AI (LLM chatbot)  
+- Docker & Docker Compose  
+- CI/CD (GitHub Actions)  
+- PM2 / Systemd (optional)  
+- WebRTC signaling server  
+- VPS (Ubuntu Linux)
+
+---
+
+## 🚀 Clone & Setup
 
 ```bash
-git clone https://github.com/Dilippurohit47/chat-app-client.git
-cd chat-app-client
-npm install
-npm run dev
-
-🔹 Backend Setup
 git clone <your-backend-repo-url>
 cd chat-app-backend
 npm install
+🔧 Environment Variables
+Create a .env file:
 
-🔧 Environment Variables (Backend)
-
-Create a .env file inside the backend:
-
+env
+Copy code
 DATABASE_URL="postgresql://user:password@localhost:5432/chatdb"
 REDIS_URL="redis://localhost:6379"
 
@@ -50,63 +44,60 @@ JWT_ACCESS_SECRET="your_access_secret"
 JWT_REFRESH_SECRET="your_refresh_secret"
 
 PORT=8000
-
-🗃 Database Setup (Backend)
+🗃 Database Setup
+bash
+Copy code
 npx prisma generate
 npx prisma migrate dev
-
-🐳 Docker (Backend)
+▶️ Start Development
+bash
+Copy code
+npm run dev
+🐳 Docker Support
+bash
+Copy code
 docker compose up --build
-
 ✨ Features (One-Line Each)
-
 🔌 Real-time WebSocket messaging
 
 👤 JWT authentication (access + refresh tokens)
 
-🟢 Online/offline presence system
+🟢 Online/offline presence & status
 
-💬 Typing indicator
+💬 Typing indicator events
 
-🔄 Message syncing across devices
+🔄 Message sync across devices
 
-🤖 AI chatbot (Gemini API)
+🤖 AI chatbot integration using Gemini API
 
-🧠 Vector DB memory for chatbot
+🧠 Vector DB for chatbot memory & semantic responses
 
-⚡ Redis caching + pub/sub for scaling
+⚡ Redis caching + pub/sub for scalable real-time events
 
-📞 WebRTC signaling for audio/video calls
+📞 WebRTC signaling for voice/video calls
 
-🔍 User search system
+🗃️ PostgreSQL storage via Prisma ORM
 
-🧵 One-to-one chat support
+🐳 Dockerized backend for clean deployments
 
-🖼 Responsive UI
+🚀 GitHub Actions CI/CD pipeline for VPS auto-deploy
 
-🐳 Dockerized backend
+🧯 Error handling + auto WebSocket reconnect logic
 
-🚀 CI/CD pipeline for automatic VPS deployment
+🔐 Secure token rotation system
 
-📂 Prisma + PostgreSQL storage
-
-🔁 Auto WebSocket reconnect + error handling
-
-📂 Project Structure (Backend)
+📂 Project Structure
+bash
+Copy code
 src/
  ├─ server.ts
- ├─ ws/
- ├─ prisma/
- ├─ controllers/
- ├─ services/
- ├─ middlewares/
- ├─ utils/
-
-📁 Project Structure (Frontend)
-src/
- ├─ components/
- ├─ pages/
- ├─ store/ (Redux)
- ├─ websocket/
- ├─ hooks/
- ├─ utils/
+ ├─ ws/               # WebSocket handlers
+ ├─ prisma/           # Prisma schema + migrations
+ ├─ controllers/      # Auth, chat, messaging logic
+ ├─ services/         # Redis, AI, Vector DB, WebRTC
+ ├─ middlewares/      # Auth, validation
+ ├─ utils/            # Helpers, token utils
+🧪 Testing
+bash
+Copy code
+npm test
