@@ -30,6 +30,7 @@ npm install
 🔧 Environment Variables
 Create a .env file:
 
+
 env
 Copy code
 DATABASE_URL="postgresql://user:password@localhost:5432/chatdb"
@@ -57,6 +58,7 @@ npm run dev
 bash
 Copy code
 docker compose up --build
+```
 ✨ Features (One-Line Each)
 🔌 Real-time WebSocket messaging
 
