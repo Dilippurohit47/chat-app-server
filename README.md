@@ -50,13 +50,11 @@ CLIENT_SECRET = "google auth client secret"
 PORT=8000
 
 🗃 Database Setup
-bash
-Copy code
+
 npx prisma generate
-npx prisma migrate dev
+npx prisma migrate dev --name init
+
 ▶️ Start Development
-bash
-Copy code
 npm run dev
 
 ```
