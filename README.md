@@ -1,4 +1,4 @@
-# 💬 Chat App — Backend (Node.js + TypeScript)
+# 💬 Not-A-Basic-Chat App — Backend (Node.js + TypeScript)
 
 A powerful real-time backend for a chat application built with **Node.js + TypeScript**, featuring WebSockets messaging, JWT authentication, AI chatbot integration (Gemini), Redis caching, vector DB semantic memory, WebRTC signaling, Docker, CI/CD, and PostgreSQL database — fully deployed on a VPS.
 
