@@ -11,20 +11,20 @@ A powerful real-time backend for a chat application built with **Node.js + TypeS
 - WebSockets (WS)  
 - PostgreSQL + Prisma ORM  
 - Redis (Cache + Pub/Sub)  
-- Vector Database (Qdrant / Pinecone)  
+- Vector Database (Qdrant )  
 - Gemini AI (LLM chatbot)  
 - Docker & Docker Compose  
 - CI/CD (GitHub Actions)  
-- PM2 / Systemd (optional)  
-- WebRTC signaling server  
-- VPS (Ubuntu Linux)
+- PM2   
+- WebRTC signaling server for call  
+- VPS 
 
 ---
 
 ## 🚀 Clone & Setup
 
 ```bash
-git clone <your-backend-repo-url>
+git clone https://github.com/Dilippurohit47/chat-app-server.git 
 cd chat-app-backend
 npm install
 🔧 Environment Variables
@@ -33,18 +33,22 @@ Create a .env file:
 
 env
 Copy code
-DATABASE_URL="postgresql://user:password@localhost:5432/chatdb"
-REDIS_URL="redis://localhost:6379"
-
-GEMINI_API_KEY="your_gemini_key"
-
-VECTOR_DB_URL="your_vector_db_url"
-VECTOR_DB_KEY="your_vector_db_key"
-
-JWT_ACCESS_SECRET="your_access_secret"
-JWT_REFRESH_SECRET="your_refresh_secret"
-
+       
+DATABASE_URL ="postgresql://postgres:password@localhost:5432/chat-app-v2?schema=public"
+AWS_SECRET_KEY=""
+AWS_ACCESS_KEY=""
+AWS_REGION=us-east-1
+JWT_SECRET = ""
+REDIS_URL = ""
+GEMINI_API_KEY =""
+VECTOR_DB_URL_QUADRANT = ""
+VECTOR_DB_QUADRANT_API_KEY = ""
+# NODE_ENV = "production"    
+NODE_ENV = "development"    
+CLIENT_ID = "google auth client id "
+CLIENT_SECRET = "google auth client secret"
 PORT=8000
+
 🗃 Database Setup
 bash
 Copy code
@@ -54,14 +58,14 @@ npx prisma migrate dev
 bash
 Copy code
 npm run dev
-🐳 Docker Support
-bash
-Copy code
-docker compose up --build
+
 ```
+
+
+
 ✨ Features (One-Line Each)
 🔌 Real-time WebSocket messaging
-
+   
 👤 JWT authentication (access + refresh tokens)
 
 🟢 Online/offline presence & status
@@ -88,18 +92,3 @@ docker compose up --build
 
 🔐 Secure token rotation system
 
-📂 Project Structure
-bash
-Copy code
-src/
- ├─ server.ts
- ├─ ws/               # WebSocket handlers
- ├─ prisma/           # Prisma schema + migrations
- ├─ controllers/      # Auth, chat, messaging logic
- ├─ services/         # Redis, AI, Vector DB, WebRTC
- ├─ middlewares/      # Auth, validation
- ├─ utils/            # Helpers, token utils
-🧪 Testing
-bash
-Copy code
-npm test
