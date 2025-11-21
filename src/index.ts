@@ -262,18 +262,13 @@ setInterval(() => {
 }, 30000);
 
 wss.on("connection", async (ws, req) => {
-  
   console.log("✅ client connected, total:", process.env.PORT);
-
 // @ts-ignore
-  ws.isAlive = true;
-  
+  ws.isAlive = true;  
 ws.on("pong", () => {
 // @ts-ignore
   ws.isAlive = true;
 });
-
-
 
 
   ws.on("message", async (m) => {
@@ -320,6 +315,7 @@ for(const id of connectedUsers){
       const personalData = await getInfoFromCollection(query) as string[]
       const answer = await getChatBotResponse(query || "hello",personalData)
       if(ws){
+        console.log("answer chatbot -",answer )
         ws.send(JSON.stringify({
           type:"chatbot-reply",
           answer:answer,

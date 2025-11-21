@@ -319,6 +319,7 @@ wss.on("connection", (ws, req) => __awaiter(void 0, void 0, void 0, function* ()
             const personalData = yield (0, vector_db_1.getInfoFromCollection)(query);
             const answer = yield (0, aiChatBot_1.getChatBotResponse)(query || "hello", personalData);
             if (ws) {
+                console.log("answer chatbot -", answer);
                 ws.send(JSON.stringify({
                     type: "chatbot-reply",
                     answer: answer,

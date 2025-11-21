@@ -3,13 +3,14 @@ FROM node:18-alpine
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm install --include=dev
+RUN npm install --omit=dev
 
-COPY . .
-RUN npm run build
+COPY dist ./dist
+COPY prisma ./prisma
+COPY docker-entrypoint.sh .
+COPY .env .env
+
 RUN npx prisma generate
-
-COPY docker-entrypoint.sh ./
 RUN chmod +x docker-entrypoint.sh
 
 EXPOSE 8080
