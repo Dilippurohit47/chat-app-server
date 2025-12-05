@@ -13,6 +13,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.sendRecentChats = exports.saveMessage = exports.upsertRecentChats = void 0;
+const redis_1 = __importDefault(require("../redis/redis"));
 const prisma_1 = require("../utils/prisma");
 const express_1 = __importDefault(require("express"));
 const upsertRecentChats = (senderId, receiverId, receiverContent, senderContent) => __awaiter(void 0, void 0, void 0, function* () {
@@ -241,6 +242,14 @@ app.get("/get-recent-chats", (req, res) => __awaiter(void 0, void 0, void 0, fun
             });
             return;
         }
+        const cachedChats = yield redis_1.default.get(`user:${userId}:chats`);
+        if (cachedChats) {
+            res.json({
+                chats: cachedChats,
+                message: "From Cached redis"
+            });
+            return;
+        }
         const chats = yield prisma_1.prisma.chat.findMany({
             where: {
                 AND: [
@@ -268,6 +277,9 @@ app.get("/get-recent-chats", (req, res) => __awaiter(void 0, void 0, void 0, fun
         const formattedChats = chats.map((chat) => {
             const otherUser = chat.user1.id === userId ? chat.user2 : chat.user1;
             return Object.assign({ chatId: chat.id, lastMessageForSender: chat.lastMessageForSender, lastMessageForReceiver: chat.lastMessageForReceiver, lastMessageCreatedAt: chat.lastMessageCreatedAt, unreadCount: chat.unreadCount, senderId: chat.senderId, receiverId: chat.receiverId }, otherUser);
+        });
+        redis_1.default.set(`user:${userId}:chats`, JSON.stringify(formattedChats), {
+            EX: 60 * 10
         });
         res.json({
             chats: formattedChats,

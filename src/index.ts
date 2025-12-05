@@ -5,12 +5,12 @@ import cors from "cors";
 import { prisma } from "./utils/prisma";
 import userAuth from "./routes/userAuth";
 import Messages, {
-  sendRecentChats,
+  sendRecentChats, 
 } from "./routes/messages";
 import Chat from "./routes/chat";
 import cookieParser from "cookie-parser";
 import { saveMessage } from "./routes/messages";
-import awsRoute from "./aws";
+import awsRoute from "./aws"; 
 import groupRoute from "./routes/group";
 import publisher from "./publisherRedis";
 import subscriber, { connectSubscriber } from "./subsciberRedis";
@@ -73,7 +73,7 @@ const subscribe = async () => {
     if (data.type === "ping") return;
     if (data.type === "personal-msg") {
       const receiverId = data.receiverId;
-  
+   
       if (usersMap.has(receiverId)) {
         let { ws } = usersMap.get(receiverId);
         ws.send(
@@ -91,6 +91,18 @@ const subscribe = async () => {
         await saveMessage(data.senderId, receiverId, data.message, data.isMedia ,data.receiverContent ,data.senderContent);
         const senderRecentChats = await sendRecentChats(data.senderId);
         const receiverRecentChats = await sendRecentChats(data.receiverId);
+        if(senderRecentChats){
+  redis.set( `user:${data.senderId}:chats`,JSON.stringify(senderRecentChats),{
+              EX:60*10
+            })
+        }
+        if(receiverRecentChats){
+          
+         redis.set( `user:${data.receiverId}:chats`,JSON.stringify(receiverRecentChats), { 
+              EX:60*10 
+            })
+        }
+       
         if (usersMap.has(data.senderId)) {
           let senderWs = usersMap.get(data.senderId).ws;
           if (senderWs && senderWs.readyState === 1) {

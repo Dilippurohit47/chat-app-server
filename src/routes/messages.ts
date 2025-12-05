@@ -1,3 +1,4 @@
+import redis from "../redis/redis";
 import { prisma } from "../utils/prisma";
 import express, { Request, Response } from "express";
  export const upsertRecentChats = async (
@@ -250,6 +251,16 @@ app.get("/get-recent-chats", async (req, res) => {
       });
       return;
     } 
+
+    const cachedChats = await redis.get(`user:${userId}:chats`)
+    if(cachedChats){
+        res.json({
+      chats: cachedChats,
+      message:"From Cached redis"
+    });
+      return
+    }
+
     const chats = await prisma.chat.findMany({
       where: {
         AND: [
@@ -288,6 +299,11 @@ app.get("/get-recent-chats", async (req, res) => {
         ...otherUser,
       };
     });
+
+    redis.set( `user:${userId}:chats`,JSON.stringify(formattedChats),{
+      EX:60*10
+    })
+
     res.json({
       chats: formattedChats,
     });

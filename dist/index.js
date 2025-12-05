@@ -119,6 +119,16 @@ const subscribe = () => __awaiter(void 0, void 0, void 0, function* () {
                 yield (0, messages_2.saveMessage)(data.senderId, receiverId, data.message, data.isMedia, data.receiverContent, data.senderContent);
                 const senderRecentChats = yield (0, messages_1.sendRecentChats)(data.senderId);
                 const receiverRecentChats = yield (0, messages_1.sendRecentChats)(data.receiverId);
+                if (senderRecentChats) {
+                    redis_1.default.set(`user:${data.senderId}:chats`, JSON.stringify(senderRecentChats), {
+                        EX: 60 * 10
+                    });
+                }
+                if (receiverRecentChats) {
+                    redis_1.default.set(`user:${data.receiverId}:chats`, JSON.stringify(receiverRecentChats), {
+                        EX: 60 * 10
+                    });
+                }
                 if (usersMap.has(data.senderId)) {
                     let senderWs = usersMap.get(data.senderId).ws;
                     if (senderWs && senderWs.readyState === 1) {
