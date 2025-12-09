@@ -8,34 +8,40 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getChatBotResponse = void 0;
-const generative_ai_1 = require("@google/generative-ai");
-const ai = new generative_ai_1.GoogleGenerativeAI(process.env.GEMINI_API_KEY ? process.env.GEMINI_API_KEY : '');
+const openai_1 = __importDefault(require("openai"));
+const openai = new openai_1.default({
+    apiKey: process.env.OPENAI_API_KEY || "",
+});
 const getChatBotResponse = (query, userData) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const model = ai.getGenerativeModel({ model: "gemini-2.5-flash" });
         const SYSTEM_PROMPT = `
 You are a helpful and friendly personal chatbot representing Dilip Purohit.
 Your goal is to answer questions about Dilip’s professional background, skills, education, experience, and other personal/professional information.
 
 - If the user asks a question that matches information in the vector database, retrieve the answer from the database.
 - Always respond in a natural, conversational tone as if you are Dilip himself.
-- Do not invent information not present in the database; if the database does not contain the answer, politely say you don’t know or ask the user to clarify.
+- Do not invent information not present in the database; if the database does not contain the answer, politely say you don't know or ask the user to clarify.
 - Keep answers concise and friendly.
 - Avoid unrelated topics.
 
-Example:
-User: "What is your qualification?"
-Bot:  " Hello ! I am a B.Tech graduate."
-
-Always act as if you are chatting as Dilip Purohit.
-user's query : ${query}
-Dilip Data :${userData}
+Here is Dilip’s data (vector DB matches):
+${userData}
 `;
-        const response = yield model.generateContent(SYSTEM_PROMPT);
-        console.log(response.response.text());
-        return response.response.text();
+        const completion = yield openai.chat.completions.create({
+            model: "gpt-4.1",
+            messages: [
+                { role: "system", content: SYSTEM_PROMPT },
+                { role: "user", content: query }
+            ],
+        });
+        const answer = completion.choices[0].message.content;
+        console.log(answer);
+        return answer;
     }
     catch (err) {
         console.error("Error generating response:", err);
