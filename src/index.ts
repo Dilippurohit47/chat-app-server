@@ -6,7 +6,7 @@ import { prisma } from "./utils/prisma";
 import userAuth from "./routes/userAuth";
 import Messages, {
   sendRecentChats, 
-} from "./routes/messages";
+} from "./routes/messages"; 
 import Chat from "./routes/chat";
 import cookieParser from "cookie-parser";
 import { saveMessage } from "./routes/messages";
@@ -20,11 +20,13 @@ const app = express();
 import {getChatBotResponse} from  "./routes/aiChatBot"
 import { getInfoFromCollection } from "./utils/vector-db";
 import redis from "./redis/redis";
-
-
- 
+process.on("unhandledRejection", (reason, promise) => {
+  console.error("🔥 Unhandled Promise Rejection:", reason);
+});
+process.on("uncaughtException", (err) => {
+  console.error("💥 Uncaught Exception:", err);
+});
 app.use(express.json());
-
 app.use( 
   cors({
     origin: [ 
@@ -38,6 +40,7 @@ app.use(
 app.use(cookieParser());
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server });  
+
 
 // app.set("trust proxy", 1); 
 const apiLimiter = rateLimit({
@@ -277,10 +280,10 @@ wss.on("connection", async (ws, req) => {
   console.log("✅ client connected, total:", process.env.PORT);
 // @ts-ignore
   ws.isAlive = true;  
-ws.on("pong", () => {
+  ws.on("pong", () => {
 // @ts-ignore
   ws.isAlive = true;
-});
+  });
 
 
   ws.on("message", async (m) => {

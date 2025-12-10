@@ -65,6 +65,12 @@ const app = (0, express_1.default)();
 const aiChatBot_1 = require("./routes/aiChatBot");
 const vector_db_1 = require("./utils/vector-db");
 const redis_1 = __importDefault(require("./redis/redis"));
+process.on("unhandledRejection", (reason, promise) => {
+    console.error("🔥 Unhandled Promise Rejection:", reason);
+});
+process.on("uncaughtException", (err) => {
+    console.error("💥 Uncaught Exception:", err);
+});
 app.use(express_1.default.json());
 app.use((0, cors_1.default)({
     origin: [

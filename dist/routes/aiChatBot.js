@@ -14,7 +14,7 @@ const generative_ai_1 = require("@google/generative-ai");
 const ai = new generative_ai_1.GoogleGenerativeAI(process.env.GEMINI_API_KEY ? process.env.GEMINI_API_KEY : '');
 const getChatBotResponse = (query, userData) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const model = ai.getGenerativeModel({ model: "gemiini-2.5-flash" });
+        const model = ai.getGenerativeModel({ model: "gemini-2.5-flash" });
         const SYSTEM_PROMPT = `
 You are a helpful and friendly personal chatbot representing Dilip Purohit.
 Your goal is to answer questions about Dilip’s professional background, skills, education, experience, and other personal/professional information.
