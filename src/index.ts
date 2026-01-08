@@ -32,6 +32,7 @@ app.use(
     origin: [ 
       "http://localhost:5173",  
       "https://chat-app-client-tawny.vercel.app",
+      "https://track-habits.xyz"
     ],    
     credentials: true,
     methods: ["GET", "POST", "PUT", "OPTIONS", "DELETE"],
@@ -42,7 +43,7 @@ const server = http.createServer(app);
 const wss = new WebSocketServer({ server });  
 
 
-// app.set("trust proxy", 1); 
+app.set("trust proxy", 1); 
 const apiLimiter = rateLimit({
   windowMs: 60 * 1000, 
   max: 100 , 

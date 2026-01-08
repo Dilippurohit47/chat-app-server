@@ -125,3 +125,9 @@ model GroupMessage {
   content   String
   createdAt DateTime @default(now())
 }
+
+model HabitTrackerUsers { //temporary model
+id String @id @default(uuid())
+userName String 
+createdAt DateTime @default(now())
+}

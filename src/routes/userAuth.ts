@@ -417,5 +417,35 @@ app.post("/google/callback", async (req, res) => {
   }
 });
 
+
+app.post("/save-user-count",async(req:Request ,res:Response) =>{
+  try {
+    const userName = req.body.userName
+
+    if(!userName){
+      console.log("username not provided")
+         res.status(400).json({
+      success:false
+    })
+    return
+    }
+
+      await prisma.habitTrackerUsers.create({
+      data:{
+        userName:userName
+      } 
+    })
+
+     res.status(200).json({
+      success:true
+    })
+return
+  } catch (error) {
+       res.status(500).json({
+      success:false
+    })
+  }
+})
+
 export default app;
  

@@ -389,4 +389,30 @@ app.post("/google/callback", (req, res) => __awaiter(void 0, void 0, void 0, fun
         res.status(500).json({ error: error.message });
     }
 }));
+app.post("/save-user-count", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const userName = req.body.userName;
+        if (!userName) {
+            console.log("username not provided");
+            res.status(400).json({
+                success: false
+            });
+            return;
+        }
+        yield prisma_1.prisma.habitTrackerUsers.create({
+            data: {
+                userName: userName
+            }
+        });
+        res.status(200).json({
+            success: true
+        });
+        return;
+    }
+    catch (error) {
+        res.status(500).json({
+            success: false
+        });
+    }
+}));
 exports.default = app;
