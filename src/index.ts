@@ -27,6 +27,7 @@ process.on("uncaughtException", (err) => {
   console.error("💥 Uncaught Exception:", err);
 });
 app.use(express.json());
+app.set("trust proxy", 1);
 app.use( 
   cors({
     origin: [ 
@@ -43,7 +44,6 @@ const server = http.createServer(app);
 const wss = new WebSocketServer({ server });  
 
 
-app.set("trust proxy", 1); 
 const apiLimiter = rateLimit({
   windowMs: 60 * 1000, 
   max: 100 , 

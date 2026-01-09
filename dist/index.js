@@ -72,6 +72,7 @@ process.on("uncaughtException", (err) => {
     console.error("💥 Uncaught Exception:", err);
 });
 app.use(express_1.default.json());
+app.set("trust proxy", 1);
 app.use((0, cors_1.default)({
     origin: [
         "http://localhost:5173",
@@ -84,7 +85,6 @@ app.use((0, cors_1.default)({
 app.use((0, cookie_parser_1.default)());
 const server = http_1.default.createServer(app);
 const wss = new ws_1.WebSocketServer({ server });
-app.set("trust proxy", 1);
 const apiLimiter = (0, express_rate_limit_1.default)({
     windowMs: 60 * 1000,
     max: 100,

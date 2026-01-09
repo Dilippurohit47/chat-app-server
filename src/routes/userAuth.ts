@@ -425,7 +425,7 @@ app.post("/save-user-count",async(req:Request ,res:Response) =>{
     if(!userName){
       console.log("username not provided")
          res.status(400).json({
-      success:false
+      success:false 
     })
     return
     }
@@ -447,5 +447,18 @@ return
   }
 })
 
+app.get("/get-save-user",async(req:Request,res:Response)=>{
+  try {
+    const data = await prisma.habitTrackerUsers.findMany()
+    console.log(data)
+     res.json(data)
+     return
+  } catch (error) {
+    res.status(200).json({
+      success:false
+    })
+    
+  }
+})
 export default app;
  
