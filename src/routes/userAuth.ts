@@ -450,8 +450,10 @@ return
 app.get("/get-save-user",async(req:Request,res:Response)=>{
   try {
     const data = await prisma.habitTrackerUsers.findMany()
-    console.log(data)
-     res.json(data)
+     res.status(200).json({
+      users:data,
+      totalUsers:data?.length
+     })
      return
   } catch (error) {
     res.status(200).json({
