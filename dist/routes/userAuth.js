@@ -418,8 +418,10 @@ app.post("/save-user-count", (req, res) => __awaiter(void 0, void 0, void 0, fun
 app.get("/get-save-user", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const data = yield prisma_1.prisma.habitTrackerUsers.findMany();
-        console.log(data);
-        res.json(data);
+        res.status(200).json({
+            users: data,
+            totalUsers: data === null || data === void 0 ? void 0 : data.length
+        });
         return;
     }
     catch (error) {
