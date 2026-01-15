@@ -44,7 +44,14 @@ model Messages {
   chat      Chat     @relation(fields: [chatId], references: [id])
   deletedBy DeletedMessage[]
   isMedia Boolean @default(false)
+  status  MessageStatus @default(sent)  
 }  
+
+enum MessageStatus {
+sent 
+delivered
+seen
+}
 
 model Chat {
   id          String   @id @default(uuid())

@@ -78,8 +78,8 @@ export const saveMessage = async (
   try { 
  
 const chat  = await upsertRecentChats(senderId,receiverId,receiverContent ,senderContent)
-if(!chat) return
-await prisma.messages.create({
+if(!chat) return  {messageSent:false , messageId:null}
+let message = await prisma.messages.create({
       data: {
         senderId: senderId,
         receiverId: receiverId,
@@ -88,14 +88,41 @@ await prisma.messages.create({
         isMedia:isMedia,
         senderContent:senderContent,
         receiverContent:receiverContent,
-      },
+      },select:{
+        id:true
+      }
     });
-    return true;
+    return {
+      messageSent:true,
+      messageId:message.id
+    };
   } catch (error) {
     console.log("error in saving message",error);
-    return false;
+    return {messageSent:false,messageId:null};
   }
 };
+
+export const messageAcknowledge = async({chatId ,senderId ,receiverId}:{chatId:string , senderId:string ,receiverId:string})=>{
+try {
+    if(!chatId) return []
+  const updatedMessages = await prisma.messages.updateMany({
+    where:{
+   chatId:chatId,
+   senderId:senderId,
+   receiverId:receiverId,
+   status:"sent"
+    },data:{
+      status:"seen"
+    }
+  })
+  console.log(updatedMessages)
+  return updatedMessages
+} catch (error) {
+  console.log("error in updating message acknowledge",error)
+  return []
+}
+
+}
 
 const app = express.Router();
 
@@ -367,52 +394,6 @@ chat = await prisma.chat.findUnique({
   }
 });
 
-// export const upsertRecentChats = async (
-//   userId1: string,
-//   userId2: string,
-//   lastMessage: string
-// ) => {
-//   try {
-//     const chat = await prisma.chat.findFirst({
-//       where: {
-//         OR: [
-//           { userId1: userId1, userId2: userId2 },
-//           { userId1: userId2, userId2: userId1 },
-//         ],
-//       },
-//     });
-
-//     if (chat) {
-//       await prisma.chat.update({
-//         where: {
-//           id: chat.id,
-//         },
-//         data: {
-//           lastMessage: lastMessage,
-//           lastMessageCreatedAt: new Date(),
-//           unreadCount: {
-//             userId: userId2,
-//             unreadMessages:
-//               chat.unreadCount?.unreadMessages != null
-//                 ? chat.unreadCount.unreadMessages + 1
-//                 : 1,
-//           },
-//         },
-//       });
-//     } else {
-//       await prisma.chat.create({
-//         data: {
-//           userId1: userId1,
-//           userId2: userId2,
-//           lastMessage: lastMessage,
-//           lastMessageCreatedAt: new Date(),
-//         },
-//       });
-//     }
-//   } catch (error) {
-//     console.log(error);
-//   }
-// };
 
 export const sendRecentChats = async (userId: string) => {
   try {  

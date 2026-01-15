@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.sendRecentChats = exports.saveMessage = exports.upsertRecentChats = void 0;
+exports.sendRecentChats = exports.messageAcknowledge = exports.saveMessage = exports.upsertRecentChats = void 0;
 const redis_1 = __importDefault(require("../redis/redis"));
 const prisma_1 = require("../utils/prisma");
 const express_1 = __importDefault(require("express"));
@@ -81,8 +81,8 @@ const saveMessage = (senderId, receiverId, isMedia, receiverContent, senderConte
     try {
         const chat = yield (0, exports.upsertRecentChats)(senderId, receiverId, receiverContent, senderContent);
         if (!chat)
-            return;
-        yield prisma_1.prisma.messages.create({
+            return { messageSent: false, messageId: null };
+        let message = yield prisma_1.prisma.messages.create({
             data: {
                 senderId: senderId,
                 receiverId: receiverId,
@@ -91,16 +91,44 @@ const saveMessage = (senderId, receiverId, isMedia, receiverContent, senderConte
                 isMedia: isMedia,
                 senderContent: senderContent,
                 receiverContent: receiverContent,
-            },
+            }, select: {
+                id: true
+            }
         });
-        return true;
+        return {
+            messageSent: true,
+            messageId: message.id
+        };
     }
     catch (error) {
         console.log("error in saving message", error);
-        return false;
+        return { messageSent: false, messageId: null };
     }
 });
 exports.saveMessage = saveMessage;
+const messageAcknowledge = (_a) => __awaiter(void 0, [_a], void 0, function* ({ chatId, senderId, receiverId }) {
+    try {
+        if (!chatId)
+            return [];
+        const updatedMessages = yield prisma_1.prisma.messages.updateMany({
+            where: {
+                chatId: chatId,
+                senderId: senderId,
+                receiverId: receiverId,
+                status: "sent"
+            }, data: {
+                status: "seen"
+            }
+        });
+        console.log(updatedMessages);
+        return updatedMessages;
+    }
+    catch (error) {
+        console.log("error in updating message acknowledge");
+        return [];
+    }
+});
+exports.messageAcknowledge = messageAcknowledge;
 const app = express_1.default.Router();
 app.get("/get-messages", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
@@ -337,51 +365,6 @@ app.put("/update-unreadmessage-count", (req, res) => __awaiter(void 0, void 0, v
         });
     }
 }));
-// export const upsertRecentChats = async (
-//   userId1: string,
-//   userId2: string,
-//   lastMessage: string
-// ) => {
-//   try {
-//     const chat = await prisma.chat.findFirst({
-//       where: {
-//         OR: [
-//           { userId1: userId1, userId2: userId2 },
-//           { userId1: userId2, userId2: userId1 },
-//         ],
-//       },
-//     });
-//     if (chat) {
-//       await prisma.chat.update({
-//         where: {
-//           id: chat.id,
-//         },
-//         data: {
-//           lastMessage: lastMessage,
-//           lastMessageCreatedAt: new Date(),
-//           unreadCount: {
-//             userId: userId2,
-//             unreadMessages:
-//               chat.unreadCount?.unreadMessages != null
-//                 ? chat.unreadCount.unreadMessages + 1
-//                 : 1,
-//           },
-//         },
-//       });
-//     } else {
-//       await prisma.chat.create({
-//         data: {
-//           userId1: userId1,
-//           userId2: userId2,
-//           lastMessage: lastMessage,
-//           lastMessageCreatedAt: new Date(),
-//         },
-//       });
-//     }
-//   } catch (error) {
-//     console.log(error);
-//   }
-// };
 const sendRecentChats = (userId) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         if (!userId) {

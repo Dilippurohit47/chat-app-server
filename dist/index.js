@@ -87,7 +87,7 @@ const server = http_1.default.createServer(app);
 const wss = new ws_1.WebSocketServer({ server });
 const apiLimiter = (0, express_rate_limit_1.default)({
     windowMs: 60 * 1000,
-    max: 100,
+    max: 1000,
     message: "Too many requests, slow down!",
 });
 app.use("/user", apiLimiter, userAuth_1.default);
@@ -110,13 +110,21 @@ const subscribe = () => __awaiter(void 0, void 0, void 0, function* () {
         if (data.type === "ping")
             return;
         if (data.type === "personal-msg") {
-            console.log(data);
             const receiverId = data.receiverId;
-            console.log("data types", data.senderId, data.receiverContent, receiverId);
             if (data.senderId && receiverId && data.receiverContent) {
-                console.log(data);
-                yield (0, messages_2.saveMessage)(data.senderId, receiverId, data.isMedia, data.receiverContent, data.senderContent);
-                console.log(data);
+                let { messageSent, messageId } = yield (0, messages_2.saveMessage)(data.senderId, receiverId, data.isMedia, data.receiverContent, data.senderContent);
+                console.log("message sent", messageSent);
+                if (!messageSent)
+                    return;
+                if (usersMap.has(data.senderId)) {
+                    let ws = usersMap.get(data.senderId).ws;
+                    ws.send(JSON.stringify({
+                        type: "message-acknowledge",
+                        messageId: messageId,
+                        clientSideMessageId: data.tempId,
+                        status: "sent"
+                    }));
+                }
                 if (usersMap.has(receiverId)) {
                     let { ws } = usersMap.get(receiverId);
                     ws.send(JSON.stringify({
@@ -281,6 +289,10 @@ const subscribe = () => __awaiter(void 0, void 0, void 0, function* () {
                     }
                 });
             }
+        }
+        if (data.type === "message-acknowledge") {
+            const updatedMessages = yield (0, messages_1.messageAcknowledge)({ chatId: data.chatId, senderId: data.senderId, receiverId: data.receiverId });
+            // code for updating user ui 
         }
     }));
 });
