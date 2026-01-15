@@ -292,7 +292,7 @@ const subscribe = () => __awaiter(void 0, void 0, void 0, function* () {
         }
         if (data.type === "message-acknowledge") {
             const updatedMessages = yield (0, messages_1.messageAcknowledge)({ chatId: data.chatId, senderId: data.senderId, receiverId: data.receiverId });
-            // code for updating user ui 
+            // code for updating user ui on frontend
         }
     }));
 });

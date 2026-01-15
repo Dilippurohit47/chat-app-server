@@ -124,7 +124,8 @@ const messageAcknowledge = (_a) => __awaiter(void 0, [_a], void 0, function* ({ 
         return updatedMessages;
     }
     catch (error) {
-        console.log("error in updating message acknowledge");
+        console.log("error in updating message acknowledge", error);
+        s;
         return [];
     }
 });

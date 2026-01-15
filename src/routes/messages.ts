@@ -118,7 +118,7 @@ try {
   console.log(updatedMessages)
   return updatedMessages
 } catch (error) {
-  console.log("error in updating message acknowledge",error)
+  console.log("error in updating message acknowledge",error)s
   return []
 }
 

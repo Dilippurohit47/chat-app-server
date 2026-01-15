@@ -16,13 +16,11 @@ yarn-debug.log*
 yarn-error.log*
 
 # Prisma
+# Prisma
 prisma/dev.db
 prisma/*.db-journal
 prisma/migrations/*/steps.json
-prisma/migrations/*/migration.sql
-# (optional: keep migration.sql if you want migrations tracked)
-
-
+# DO NOT ignore migration.sql
 # Redis / cache
 dump.rdb
 *.rdb
