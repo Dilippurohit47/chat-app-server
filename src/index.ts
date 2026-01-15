@@ -76,9 +76,14 @@ const subscribe = async () => {
 
     if (data.type === "ping") return;
     if (data.type === "personal-msg") {
+      console.log(data)
       const receiverId = data.receiverId;
-   
-      if (usersMap.has(receiverId)) {
+      console.log("data types",data.senderId , data.receiverContent , receiverId )
+      if (data.senderId && receiverId && data.receiverContent) {
+        console.log(data)
+        await saveMessage(data.senderId, receiverId, data.isMedia ,data.receiverContent ,data.senderContent); 
+        console.log(data)
+         if (usersMap.has(receiverId)) {
         let { ws } = usersMap.get(receiverId);
         ws.send(
           JSON.stringify({
@@ -91,8 +96,6 @@ const subscribe = async () => {
           })
         );
       }
-      if (data.senderId || receiverId || data.message) {
-        await saveMessage(data.senderId, receiverId, data.message, data.isMedia ,data.receiverContent ,data.senderContent);
         const senderRecentChats = await sendRecentChats(data.senderId);
         const receiverRecentChats = await sendRecentChats(data.receiverId);
         if(senderRecentChats){
@@ -133,6 +136,8 @@ const subscribe = async () => {
           }
         }
       }
+
+
     }
     if (data.type === "group-message") {
       const groupId = data.groupId;
@@ -288,9 +293,10 @@ wss.on("connection", async (ws, req) => {
 
 
   ws.on("message", async (m) => {
+
     await publisher.publish("messages", m.toString());
     const data = JSON.parse(m.toString());
-
+console.log("first",data)
     if (data.type === "user-info") {
       const user = await prisma.user.findUnique({
         where: {

@@ -71,7 +71,6 @@ import express, { Request, Response } from "express";
 export const saveMessage = async (
   senderId: string,
   receiverId: string,
-  content: string,
   isMedia:boolean,
   receiverContent:string,
   senderContent:string,

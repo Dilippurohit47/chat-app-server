@@ -110,20 +110,24 @@ const subscribe = () => __awaiter(void 0, void 0, void 0, function* () {
         if (data.type === "ping")
             return;
         if (data.type === "personal-msg") {
+            console.log(data);
             const receiverId = data.receiverId;
-            if (usersMap.has(receiverId)) {
-                let { ws } = usersMap.get(receiverId);
-                ws.send(JSON.stringify({
-                    type: "personal-msg",
-                    receiverContent: data.receiverContent,
-                    senderContent: data.senderContent,
-                    receiverId: receiverId,
-                    senderId: data.senderId,
-                    isMedia: data.isMedia || false
-                }));
-            }
-            if (data.senderId || receiverId || data.message) {
-                yield (0, messages_2.saveMessage)(data.senderId, receiverId, data.message, data.isMedia, data.receiverContent, data.senderContent);
+            console.log("data types", data.senderId, data.receiverContent, receiverId);
+            if (data.senderId && receiverId && data.receiverContent) {
+                console.log(data);
+                yield (0, messages_2.saveMessage)(data.senderId, receiverId, data.isMedia, data.receiverContent, data.senderContent);
+                console.log(data);
+                if (usersMap.has(receiverId)) {
+                    let { ws } = usersMap.get(receiverId);
+                    ws.send(JSON.stringify({
+                        type: "personal-msg",
+                        receiverContent: data.receiverContent,
+                        senderContent: data.senderContent,
+                        receiverId: receiverId,
+                        senderId: data.senderId,
+                        isMedia: data.isMedia || false
+                    }));
+                }
                 const senderRecentChats = yield (0, messages_1.sendRecentChats)(data.senderId);
                 const receiverRecentChats = yield (0, messages_1.sendRecentChats)(data.receiverId);
                 if (senderRecentChats) {
@@ -305,6 +309,7 @@ wss.on("connection", (ws, req) => __awaiter(void 0, void 0, void 0, function* ()
         var _a, _b, _c, _d, _e, _f, _g, _h, _j;
         yield publisherRedis_1.default.publish("messages", m.toString());
         const data = JSON.parse(m.toString());
+        console.log("first", data);
         if (data.type === "user-info") {
             const user = yield prisma_1.prisma.user.findUnique({
                 where: {
