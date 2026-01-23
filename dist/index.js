@@ -105,7 +105,7 @@ app.get("/", (req, res) => {
 });
 const subscribe = () => __awaiter(void 0, void 0, void 0, function* () {
     yield subsciberRedis_1.default.subscribe("messages", (msg) => __awaiter(void 0, void 0, void 0, function* () {
-        var _a, _b;
+        var _a, _b, _c;
         const data = JSON.parse(msg.toString());
         if (data.type === "ping")
             return;
@@ -120,9 +120,7 @@ const subscribe = () => __awaiter(void 0, void 0, void 0, function* () {
                     let ws = usersMap.get(data.senderId).ws;
                     ws.send(JSON.stringify({
                         type: "message-acknowledge",
-                        messageId: messageId,
-                        clientSideMessageId: data.tempId,
-                        status: "sent"
+                        messages: [{ id: messageId, clientSideMessageId: data.tempId, status: 'sent' }],
                     }));
                 }
                 if (usersMap.has(receiverId)) {
@@ -292,7 +290,16 @@ const subscribe = () => __awaiter(void 0, void 0, void 0, function* () {
         }
         if (data.type === "message-acknowledge") {
             const updatedMessages = yield (0, messages_1.messageAcknowledge)({ chatId: data.chatId, senderId: data.senderId, receiverId: data.receiverId });
-            // code for updating user ui on frontend
+            if (usersMap.has(data.senderId)) {
+                let ws = (_c = usersMap.get(data.senderId)) === null || _c === void 0 ? void 0 : _c.ws;
+                if (ws) {
+                    ws.send(JSON.stringify({
+                        type: "message-acknowledge",
+                        messages: updatedMessages
+                    }));
+                }
+                console.log("messages send");
+            }
         }
     }));
 });
@@ -321,7 +328,6 @@ wss.on("connection", (ws, req) => __awaiter(void 0, void 0, void 0, function* ()
         var _a, _b, _c, _d, _e, _f, _g, _h, _j;
         yield publisherRedis_1.default.publish("messages", m.toString());
         const data = JSON.parse(m.toString());
-        console.log("first", data);
         if (data.type === "user-info") {
             const user = yield prisma_1.prisma.user.findUnique({
                 where: {

@@ -79,7 +79,7 @@ const subscribe = async () => {
     if (data.type === "personal-msg") {
       const receiverId = data.receiverId;
       if (data.senderId && receiverId && data.receiverContent) {
-       let {messageSent , messageId}:{messageSent:boolean , messageId:string | null} =  await saveMessage(data.senderId, receiverId, data.isMedia ,data.receiverContent ,data.senderContent); 
+       let {messageSent , messageId}:{messageSent:boolean , messageId:string | null} =  await saveMessage(data.tempId,data.senderId, receiverId, data.isMedia ,data.receiverContent ,data.senderContent); 
        console.log("message sent",messageSent)
        if(!messageSent) return
        
@@ -87,9 +87,7 @@ const subscribe = async () => {
         let ws  = usersMap.get(data.senderId).ws
         ws.send(JSON.stringify({
           type:"message-acknowledge",
-          messageId:messageId,
-          clientSideMessageId:data.tempId,
-          status:"sent"
+          messages:[{id:messageId , clientSideMessageId:data.tempId ,status:'sent'}],
         }))
        }
 
@@ -102,7 +100,8 @@ const subscribe = async () => {
             senderContent: data.senderContent,
             receiverId: receiverId, 
             senderId: data.senderId, 
-            isMedia:data.isMedia || false
+            isMedia:data.isMedia || false,
+            id:data.tempId
           })
         );
       }
@@ -144,10 +143,10 @@ const subscribe = async () => {
           } else {
             console.log(`❌ WebSocket not open for receiver (${receiverId})`); 
           }
-        }
+        }     
       }
-
-
+ 
+ 
     }
     if (data.type === "group-message") {
       const groupId = data.groupId;
@@ -277,7 +276,17 @@ const subscribe = async () => {
     }
     if(data.type === "message-acknowledge"){
       const updatedMessages = await messageAcknowledge({chatId:data.chatId ,senderId:data.senderId,receiverId:data.receiverId})
-      // code for updating user ui on frontend
+      if(usersMap.has(data.senderId)){
+        let ws = usersMap.get(data.senderId)?.ws
+        if(ws){
+          ws.send(JSON.stringify({
+            type:"message-acknowledge",
+            messages:updatedMessages
+          }))
+        }
+        console.log("messages send")
+      }
+      
     }
   });
 };
@@ -310,7 +319,6 @@ wss.on("connection", async (ws, req) => {
 
     await publisher.publish("messages", m.toString());
     const data = JSON.parse(m.toString());
-console.log("first",data)
     if (data.type === "user-info") {
       const user = await prisma.user.findUnique({
         where: {

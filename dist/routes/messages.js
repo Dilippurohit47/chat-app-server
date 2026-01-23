@@ -110,22 +110,35 @@ const messageAcknowledge = (_a) => __awaiter(void 0, [_a], void 0, function* ({ 
     try {
         if (!chatId)
             return [];
-        const updatedMessages = yield prisma_1.prisma.messages.updateMany({
-            where: {
-                chatId: chatId,
-                senderId: senderId,
-                receiverId: receiverId,
-                status: "sent"
-            }, data: {
-                status: "seen"
-            }
-        });
-        console.log(updatedMessages);
+        const updatedMessages = yield prisma_1.prisma.$transaction((tx) => __awaiter(void 0, void 0, void 0, function* () {
+            // 1. Get messages first
+            const messages = yield tx.messages.findMany({
+                where: {
+                    chatId,
+                    senderId,
+                    receiverId,
+                    status: "sent",
+                },
+            });
+            // 2. Update them
+            yield tx.messages.updateMany({
+                where: {
+                    chatId,
+                    senderId,
+                    receiverId,
+                    status: "sent",
+                },
+                data: {
+                    status: "seen",
+                },
+            });
+            // 3. Return previously fetched messages (now logically "seen")
+            return messages.map(m => (Object.assign(Object.assign({}, m), { status: "seen" })));
+        }));
         return updatedMessages;
     }
     catch (error) {
         console.log("error in updating message acknowledge", error);
-        s;
         return [];
     }
 });

@@ -69,6 +69,7 @@ import express, { Request, Response } from "express";
   }
 };
 export const saveMessage = async (
+  tempId:string,
   senderId: string,
   receiverId: string,
   isMedia:boolean,
@@ -81,6 +82,7 @@ const chat  = await upsertRecentChats(senderId,receiverId,receiverContent ,sende
 if(!chat) return  {messageSent:false , messageId:null}
 let message = await prisma.messages.create({
       data: {
+        id:tempId,
         senderId: senderId,
         receiverId: receiverId,
         content: "content",
@@ -105,20 +107,36 @@ let message = await prisma.messages.create({
 export const messageAcknowledge = async({chatId ,senderId ,receiverId}:{chatId:string , senderId:string ,receiverId:string})=>{
 try {
     if(!chatId) return []
-  const updatedMessages = await prisma.messages.updateMany({
-    where:{
-   chatId:chatId,
-   senderId:senderId,
-   receiverId:receiverId,
-   status:"sent"
-    },data:{
-      status:"seen"
-    }
-  })
-  console.log(updatedMessages)
+const updatedMessages = await prisma.$transaction(async (tx) => {
+  // 1. Get messages first
+  const messages = await tx.messages.findMany({
+    where: {
+      chatId,
+      senderId,
+      receiverId,
+      status: "sent",
+    },
+  });
+  // 2. Update them
+  await tx.messages.updateMany({
+    where: {
+      chatId,
+      senderId,
+      receiverId,
+      status: "sent",
+    },
+    data: {
+      status: "seen",
+    },
+  });
+
+  // 3. Return previously fetched messages (now logically "seen")
+  return messages.map(m => ({ ...m, status: "seen" }));
+});
+
   return updatedMessages
 } catch (error) {
-  console.log("error in updating message acknowledge",error)s
+  console.log("error in updating message acknowledge",error)
   return []
 }
 

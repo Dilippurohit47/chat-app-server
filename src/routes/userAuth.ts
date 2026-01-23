@@ -462,5 +462,39 @@ app.get("/get-save-user",async(req:Request,res:Response)=>{
     
   }
 })
+
+app.get("/check-username",async(req:Request,res:Response)=>{
+try {
+const username = req.query.username  as string
+const exists  = await redis.sIsMember("usernames", username);
+console.log(exists)
+
+if (!exists) {
+    const user = await prisma.user.findUnique({
+    where:{
+      name:username
+    }
+  })
+  
+  if (user) {
+    await redis.sAdd("usernames", username);
+  }
+}
+     res.status(200).json({
+        success:true,
+        exist:exists === 1 ? true : false
+    })
+} catch (error) {
+    console.log(error)
+    res.status(500).json({
+      success:false,
+      error:"Internals server error"
+    })
+    return
+}
+
+})
+
+
 export default app;
  

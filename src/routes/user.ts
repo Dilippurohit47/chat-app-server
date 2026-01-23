@@ -1,4 +1,4 @@
-import express from "express"
+import express , {Request ,Response} from "express"
 import { prisma } from "../utils/prisma"
 
 const app = express.Router()
@@ -31,6 +31,7 @@ app.get("/get-public-key/:id",async(req,res) =>{
     }
 
 })
+
 
 
 export default app
