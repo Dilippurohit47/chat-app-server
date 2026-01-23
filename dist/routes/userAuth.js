@@ -430,4 +430,33 @@ app.get("/get-save-user", (req, res) => __awaiter(void 0, void 0, void 0, functi
         });
     }
 }));
+app.get("/check-username", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const username = req.query.username;
+        const exists = yield redis_1.default.sIsMember("usernames", username);
+        console.log(exists);
+        if (!exists) {
+            const user = yield prisma_1.prisma.user.findUnique({
+                where: {
+                    name: username
+                }
+            });
+            if (user) {
+                yield redis_1.default.sAdd("usernames", username);
+            }
+        }
+        res.status(200).json({
+            success: true,
+            exist: exists === 1 ? true : false
+        });
+    }
+    catch (error) {
+        console.log(error);
+        res.status(500).json({
+            success: false,
+            error: "Internals server error"
+        });
+        return;
+    }
+}));
 exports.default = app;

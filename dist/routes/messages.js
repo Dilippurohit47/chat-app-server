@@ -77,13 +77,14 @@ const upsertRecentChats = (senderId, receiverId, receiverContent, senderContent)
     }
 });
 exports.upsertRecentChats = upsertRecentChats;
-const saveMessage = (senderId, receiverId, isMedia, receiverContent, senderContent) => __awaiter(void 0, void 0, void 0, function* () {
+const saveMessage = (tempId, senderId, receiverId, isMedia, receiverContent, senderContent) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const chat = yield (0, exports.upsertRecentChats)(senderId, receiverId, receiverContent, senderContent);
         if (!chat)
             return { messageSent: false, messageId: null };
         let message = yield prisma_1.prisma.messages.create({
             data: {
+                id: tempId,
                 senderId: senderId,
                 receiverId: receiverId,
                 content: "content",

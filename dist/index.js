@@ -112,7 +112,7 @@ const subscribe = () => __awaiter(void 0, void 0, void 0, function* () {
         if (data.type === "personal-msg") {
             const receiverId = data.receiverId;
             if (data.senderId && receiverId && data.receiverContent) {
-                let { messageSent, messageId } = yield (0, messages_2.saveMessage)(data.senderId, receiverId, data.isMedia, data.receiverContent, data.senderContent);
+                let { messageSent, messageId } = yield (0, messages_2.saveMessage)(data.tempId, data.senderId, receiverId, data.isMedia, data.receiverContent, data.senderContent);
                 console.log("message sent", messageSent);
                 if (!messageSent)
                     return;
@@ -131,7 +131,8 @@ const subscribe = () => __awaiter(void 0, void 0, void 0, function* () {
                         senderContent: data.senderContent,
                         receiverId: receiverId,
                         senderId: data.senderId,
-                        isMedia: data.isMedia || false
+                        isMedia: data.isMedia || false,
+                        id: data.tempId
                     }));
                 }
                 const senderRecentChats = yield (0, messages_1.sendRecentChats)(data.senderId);

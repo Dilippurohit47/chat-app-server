@@ -466,7 +466,7 @@ app.get("/get-save-user",async(req:Request,res:Response)=>{
 app.get("/check-username",async(req:Request,res:Response)=>{
 try {
 const username = req.query.username  as string
-const exists  = await redis.sIsMember("usernames", username);
+const exists  = await redis.sIsMember("usernames", username); 
 console.log(exists)
 
 if (!exists) {
