@@ -7,6 +7,7 @@ import redis from "../redis/redis";
 import { google } from "googleapis";
 import { GoogleUserTypes } from "../types/index";
 import bcrypt from "bcrypt"
+import { verifyAccessToken } from "../middlewares/VerifyAccessToken";
 
 const CLIENT_ID = process.env.CLIENT_ID;
 const CLIENT_SECRET = process.env.CLIENT_SECRET;
@@ -139,7 +140,7 @@ app.post("/sign-up", async (req: Request, res: Response) => {
       },
     }); 
     if (userExist) {
-      res.status(403).json({
+      res.status(409).json({
         message: "User with this email already exist",
       });
       return;
@@ -178,37 +179,7 @@ app.post("/sign-up", async (req: Request, res: Response) => {
   }
 });
 
-const verifyAccessToken = (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const authHeader = req.headers["authorization"];
-    if (!authHeader) {
-      res.status(401).json({ message: "Access token missing" });
-      return;
-    }
-    const token = authHeader.split(" ")[1];
 
-    if (!token) {
-      res.status(401).json({ message: "Invalid authorization header" });
-      return;
-    }
-
-    jwt.verify(token, JWT_PASSWORD, (err, decoded) => {
-      if (err) {
-        console.log(err);
-        res.status(403).json({ message: "Invalid or expired token" });
-        return;
-      }
-      if (typeof decoded === "string") {
-        return;
-      }
-      req.user = decoded; 
-      next();
-    });
-  } catch (err) {
-    res.status(500).json({ message: "Server error" });
-    return;
-  }
-};
 
 app.get("/get-user", verifyAccessToken, async (req: Request, res: Response) => {
   try {
@@ -333,14 +304,6 @@ app.get("/refresh", async (req: Request, res: Response) => {
     res.status(500).json({
       message: "Internal server error",
     });
-  }
-});
-
-app.get("/checking", verifyAccessToken, async (req, res) => {
-  try {
-    res.json();
-  } catch (error) {
-    console.log(error);
   }
 });
 

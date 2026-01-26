@@ -20,6 +20,7 @@ const zod_1 = require("../types/zod");
 const redis_1 = __importDefault(require("../redis/redis"));
 const googleapis_1 = require("googleapis");
 const bcrypt_1 = __importDefault(require("bcrypt"));
+const VerifyAccessToken_1 = require("../middlewares/VerifyAccessToken");
 const CLIENT_ID = process.env.CLIENT_ID;
 const CLIENT_SECRET = process.env.CLIENT_SECRET;
 const oauth2Client = new googleapis_1.google.auth.OAuth2(CLIENT_ID, CLIENT_SECRET, "postmessage");
@@ -128,7 +129,7 @@ app.post("/sign-up", (req, res) => __awaiter(void 0, void 0, void 0, function* (
             },
         });
         if (userExist) {
-            res.status(403).json({
+            res.status(409).json({
                 message: "User with this email already exist",
             });
             return;
@@ -164,37 +165,7 @@ app.post("/sign-up", (req, res) => __awaiter(void 0, void 0, void 0, function* (
         });
     }
 }));
-const verifyAccessToken = (req, res, next) => {
-    try {
-        const authHeader = req.headers["authorization"];
-        if (!authHeader) {
-            res.status(401).json({ message: "Access token missing" });
-            return;
-        }
-        const token = authHeader.split(" ")[1];
-        if (!token) {
-            res.status(401).json({ message: "Invalid authorization header" });
-            return;
-        }
-        jsonwebtoken_1.default.verify(token, helper_1.JWT_PASSWORD, (err, decoded) => {
-            if (err) {
-                console.log(err);
-                res.status(403).json({ message: "Invalid or expired token" });
-                return;
-            }
-            if (typeof decoded === "string") {
-                return;
-            }
-            req.user = decoded;
-            next();
-        });
-    }
-    catch (err) {
-        res.status(500).json({ message: "Server error" });
-        return;
-    }
-};
-app.get("/get-user", verifyAccessToken, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+app.get("/get-user", VerifyAccessToken_1.verifyAccessToken, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         if (!req.user) {
             res.status(404).json({
@@ -314,14 +285,6 @@ app.get("/refresh", (req, res) => __awaiter(void 0, void 0, void 0, function* ()
         res.status(500).json({
             message: "Internal server error",
         });
-    }
-}));
-app.get("/checking", verifyAccessToken, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        res.json();
-    }
-    catch (error) {
-        console.log(error);
     }
 }));
 app.post("/sign-out", (req, res) => {

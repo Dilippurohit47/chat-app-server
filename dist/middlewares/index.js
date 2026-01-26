@@ -23,11 +23,10 @@ const authorizeToken = (req, res, next) => {
         next();
     }
     catch (error) {
-        console.log(error);
+        console.log("invalid token");
         res.status(403).json({
             message: "Invalid Token"
         });
-        return;
     }
 };
 exports.authorizeToken = authorizeToken;

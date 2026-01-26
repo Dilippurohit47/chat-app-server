@@ -18,10 +18,9 @@ try {
    req.user = user
    next()
 } catch (error) {
-    console.log(error)
-     res.status(403).json({
+    console.log("invalid token")
+    res.status(403).json({
         message:"Invalid Token"
     })
-    return
 }   
 }

@@ -13,6 +13,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.sendRecentChats = exports.messageAcknowledge = exports.saveMessage = exports.upsertRecentChats = void 0;
+const VerifyAccessToken_1 = require("../middlewares/VerifyAccessToken");
 const redis_1 = __importDefault(require("../redis/redis"));
 const prisma_1 = require("../utils/prisma");
 const express_1 = __importDefault(require("express"));
@@ -276,9 +277,9 @@ app.post("/create-chats", (req, res) => __awaiter(void 0, void 0, void 0, functi
         });
     }
 }));
-app.get("/get-recent-chats", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+app.get("/get-recent-chats", VerifyAccessToken_1.verifyAccessToken, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const userId = req.query.userId;
+        const userId = req.user.id;
         if (!userId) {
             res.status(404).json({
                 message: "Login first",

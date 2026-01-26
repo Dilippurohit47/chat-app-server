@@ -1,3 +1,4 @@
+import { verifyAccessToken } from "../middlewares/VerifyAccessToken";
 import redis from "../redis/redis";
 import { prisma } from "../utils/prisma";
 import express, { Request, Response } from "express";
@@ -286,9 +287,10 @@ app.post("/create-chats", async (req, res) => {
   }
 });
 
-app.get("/get-recent-chats", async (req, res) => {
+app.get("/get-recent-chats",verifyAccessToken, async (req, res) => {
   try {
-    const userId = req.query.userId as string;
+    const userId = req.user.id as string;
+
     if (!userId) {
       res.status(404).json({
         message: "Login first",
