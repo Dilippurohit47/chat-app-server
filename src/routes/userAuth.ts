@@ -114,8 +114,8 @@ app.post("/sign-in", async (req, res) => {
       user,
     });
     return;
-  } catch (error) {
-    console.log(error);
+  } catch (error) { 
+    console.log("error in sign in",error);
     res.status(500).json({
       message: "Internal server error",  
     });
@@ -199,7 +199,7 @@ app.get("/get-user", verifyAccessToken, async (req: Request, res: Response) => {
     const user = await prisma.user.findUnique({  
       where: { 
         id: userId,
-      },
+      }, 
       select: {
         profileUrl: true,
         name: true,

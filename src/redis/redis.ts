@@ -5,20 +5,24 @@ dotenv.config()
 let redis: RedisClientType | any;
 if (process.env.NODE_ENV === "production") {
   redis = createClient({
-    url: process.env.REDIS_URL,
+    url: process.env.REDIS_URL, 
+        socket: {
+      reconnectStrategy: () => 1000,
+    },
   }); 
 } else {
   redis = mockRedisStore
 }
 
 redis.on("error",(error) =>{  
-    console.log("Error in main redis" ,error)  
-})
- 
+    console.log("Error in main redis" ,error)   
+}) 
+  
 redis.on("ready", () => {
   console.log("main Redis is ready to use");
 });
 
+ 
 (async() =>{ 
     await redis.connect()
 })()

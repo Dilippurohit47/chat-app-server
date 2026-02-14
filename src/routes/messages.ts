@@ -214,13 +214,14 @@ app.get("/get-messages", async (req: Request<{},{},getMessagesBody>, res: Respon
         ].filter(Boolean),
         deletedBy: {
           none: {
-            userId: receiverId,
+            userId: senderId,
           },
         }, 
       },
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-      include: { sender: true, receiver: true },
+      include: { sender: true, receiver: true ,deletedBy:true},
     });
+
 
     const hasMore = messages.length > limit;
     const messagesToSend = hasMore ? messages.slice(0, limit) : messages;
