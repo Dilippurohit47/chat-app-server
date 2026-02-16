@@ -1,6 +1,6 @@
 import { verifyAccessToken } from "../middlewares/VerifyAccessToken";
 import redis from "../redis/redis";
-import { prisma } from "../utils/prisma";
+import { prisma } from "../infra/database/prisma";
 import express, { Request, Response } from "express";
  export const upsertRecentChats = async (
   senderId: string,

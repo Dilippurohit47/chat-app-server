@@ -1,5 +1,6 @@
 import express, { Request, Response } from "express";
-import { prisma } from "../utils/prisma";
+import { prisma } from "../infra/database/prisma";
+
 import { authorizeToken } from "../middlewares";
 import redis from "../redis/redis"
 const app = express.Router();

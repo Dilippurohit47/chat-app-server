@@ -2,7 +2,7 @@ import { createClient, RedisClientType } from "redis";
 import dotenv from "dotenv"
 import { mockRedisStore } from "../mockStoreRedis";
 import { createRedisMessageHandler } from "./messageDispatcher";
-import { prisma } from "../../utils/prisma";
+import { prisma } from "../../infra/database/prisma";
 import { getUserSocket, isUserConnected } from "../../ws/connectionManager";
 import { saveMessage  ,messageAcknowledge ,sendRecentChats} from "../../routes/messages";
 import redis from "../redis";

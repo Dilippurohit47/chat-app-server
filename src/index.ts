@@ -3,7 +3,8 @@ import { connectSubscriber, startRedisSubscriber } from "./redis/subscriber/subs
 import { registerWebSocketHandlers } from "./ws/wsServer";
 import { startWsHeartbeat } from "./ws/startWsHearBeat";
 import { server, wss } from "./server";
-import "./utils/vector-db"
+import "./infra/vector/vector-db"
+
 process.on("unhandledRejection", (reason, promise) => {
   console.error("🔥 Unhandled Promise Rejection:", reason);
 });
@@ -13,7 +14,7 @@ process.on("uncaughtException", (err) => {
 
 const PORT = process.env.PORT  || 8080;
 
-const startApp = async()=>{
+const bootstrap = async()=>{
 try {
   await connectSubscriber();
   await startRedisSubscriber();
@@ -30,6 +31,6 @@ server.listen(PORT, () => {
 }
 }
   
-startApp()
+bootstrap()
 
 

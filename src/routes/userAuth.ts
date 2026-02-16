@@ -1,7 +1,7 @@
 import express, { NextFunction, Request, Response } from "express";
-import { prisma } from "../utils/prisma";
+import { prisma } from "../infra/database/prisma";
 import { formatZodError, JWT_PASSWORD, sendToken } from "../utils/helper";
-import jwt, { JwtPayload, TokenExpiredError } from "jsonwebtoken";
+import jwt, { JwtPayload } from "jsonwebtoken";
 import { singnUpSchema } from "../types/zod";
 import redis from "../redis/redis";
 import { google } from "googleapis";

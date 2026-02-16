@@ -1,5 +1,6 @@
 import express , {Request ,Response} from "express"
-import { prisma } from "../utils/prisma"
+import { prisma } from "../infra/database/prisma";
+
 
 const app = express.Router()
 

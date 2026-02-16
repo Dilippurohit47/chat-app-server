@@ -21,8 +21,6 @@ const apiLimiter = rateLimit({
 });
 
 
-
-
 app.use("/user", apiLimiter ,  userAuth); 
 app.use("/chat",apiLimiter , Messages); 
 app.use("/aws",apiLimiter , awsRoute);

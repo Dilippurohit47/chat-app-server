@@ -1,5 +1,5 @@
 import express, { Request, Response } from "express";
-import { prisma } from "../utils/prisma";
+import { prisma } from "../infra/database/prisma";
 const app = express.Router();
 
 app.delete("/clear-chat", async (req: Request, res: Response) => {
