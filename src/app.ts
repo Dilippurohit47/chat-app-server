@@ -3,7 +3,7 @@ import userAuth from "./routes/userAuth";
 import Messages from "./routes/messages"; 
 import Chat from "./routes/chat";
 import cookieParser from "cookie-parser";
-import awsRoute from "../src/infra/aws/presignedUrl"; 
+import awsRoute from "./infra/aws/presignedUrl"; 
 import groupRoute from "./routes/group";
 import rateLimit from "express-rate-limit";
 import { corsMiddleware } from "./middlewares/cors";
