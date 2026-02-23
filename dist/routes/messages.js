@@ -15,7 +15,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.sendRecentChats = exports.messageAcknowledge = exports.saveMessage = exports.upsertRecentChats = void 0;
 const VerifyAccessToken_1 = require("../middlewares/VerifyAccessToken");
 const redis_1 = __importDefault(require("../redis/redis"));
-const prisma_1 = require("../utils/prisma");
+const prisma_1 = require("../infra/database/prisma");
 const express_1 = __importDefault(require("express"));
 const upsertRecentChats = (senderId, receiverId, receiverContent, senderContent) => __awaiter(void 0, void 0, void 0, function* () {
     try {
@@ -207,12 +207,12 @@ app.get("/get-messages", (req, res) => __awaiter(void 0, void 0, void 0, functio
                 ].filter(Boolean),
                 deletedBy: {
                     none: {
-                        userId: receiverId,
+                        userId: senderId,
                     },
                 },
             },
             orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-            include: { sender: true, receiver: true },
+            include: { sender: true, receiver: true, deletedBy: true },
         });
         const hasMore = messages.length > limit;
         const messagesToSend = hasMore ? messages.slice(0, limit) : messages;

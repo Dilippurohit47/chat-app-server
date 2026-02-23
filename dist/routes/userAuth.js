@@ -13,7 +13,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
-const prisma_1 = require("../utils/prisma");
+const prisma_1 = require("../infra/database/prisma");
 const helper_1 = require("../utils/helper");
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const zod_1 = require("../types/zod");
@@ -106,7 +106,7 @@ app.post("/sign-in", (req, res) => __awaiter(void 0, void 0, void 0, function* (
         return;
     }
     catch (error) {
-        console.log(error);
+        console.log("error in sign in", error);
         res.status(500).json({
             message: "Internal server error",
         });

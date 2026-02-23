@@ -6,20 +6,13 @@ import { getChatBotResponse } from "../../routes/aiChatBot";
 import { getUserSocket } from "../connectionManager";
 
 export const chatbotHandler = (data,ws:WebSocket) =>{
-
-
     switch (data.type) {
         case "get-chatbot-response":
-            return getChatBotResponseAndSend(data,ws)
-            
+            return getChatBotResponseAndSend(data,ws)       
         default:
             logWarn(`Unknown handler in chat bot ${data.type}`)
     }
-
-
 }
-
-
 
 const getChatBotResponseAndSend = async(data,wss:WebSocket)=>{
         const query = data.query;

@@ -15,9 +15,6 @@ import { sendRecentChats } from "../../routes/messages";
 
  }
 
-
-
-
  const getRecentChatsHandler = async(data,ws:WebSocket)=>{
              const recentChats = await sendRecentChats(data.userId);
          if (!ws) return;

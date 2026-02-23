@@ -12,29 +12,22 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const redis_1 = require("redis");
-const dotenv_1 = __importDefault(require("dotenv"));
-const mockStoreRedis_1 = require("./mockStoreRedis");
-dotenv_1.default.config();
-let redis;
-if (process.env.NODE_ENV === "production") {
-    redis = (0, redis_1.createClient)({
-        url: process.env.REDIS_URL,
-        socket: {
-            reconnectStrategy: () => 1000,
-        },
-    });
-}
-else {
-    redis = mockStoreRedis_1.mockRedisStore;
-}
-redis.on("error", (error) => {
-    console.log("Error in main redis", error);
+exports.handleConnectionClosed = void 0;
+const redis_1 = __importDefault(require("../../redis/redis"));
+const connectionManager_1 = require("../connectionManager");
+const handleConnectionClosed = (ws, wss) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    const userId = (_a = (0, connectionManager_1.getConnectedEntries)().find(([id, socket]) => socket.ws === ws)) === null || _a === void 0 ? void 0 : _a[0];
+    if (userId) {
+        (0, connectionManager_1.removeUserFromConnections)(userId);
+        yield redis_1.default.sRem("online-users", userId);
+        const onlineMembers = yield redis_1.default.sMembers("online-users");
+        wss.clients.forEach((c) => {
+            c.send(JSON.stringify({
+                type: "online-users",
+                onlineUsers: onlineMembers,
+            }));
+        });
+    }
 });
-redis.on("ready", () => {
-    console.log("main Redis is ready to use");
-});
-(() => __awaiter(void 0, void 0, void 0, function* () {
-    yield redis.connect();
-}))();
-exports.default = redis;
+exports.handleConnectionClosed = handleConnectionClosed;

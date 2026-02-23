@@ -6,7 +6,6 @@ const sendToUser = (userId: string, payload: unknown) => {
   ws.send(JSON.stringify(payload));
 };
 
-
 export const callHandler = async (data) => { 
   switch (data.type) {
     case "offer":
@@ -38,7 +37,6 @@ const handleOffer = (data) => {
     offer: data.offer,
   });
 };
-
 
 const handleAnswer = (data) => {
   sendToUser(data.receiverId, {

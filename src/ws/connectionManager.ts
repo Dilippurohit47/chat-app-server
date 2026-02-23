@@ -16,6 +16,7 @@ export const getUserSocket = (id: string): WebSocket | null => {
   const user = usersMap.get(id);
   return user ? user.ws : null;
 };
+
 export const setUser = (id: string, ws: WebSocket, user: UserType) => {
   usersMap.set(id, { ws, userInfo: user });
 };
