@@ -312,6 +312,7 @@ app.post("/sign-out", (req: Request, res: Response) => {
     res.clearCookie("chat-token", {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax"
     });
 
     res.status(200).json({ message: "Logged out successfully" });
