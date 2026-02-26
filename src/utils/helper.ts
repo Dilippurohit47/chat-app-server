@@ -26,7 +26,7 @@ if(!JWT_PASSWORD){
     res.cookie(cookieName, token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production", 
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", 
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "none", 
       expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
         });
     return token
