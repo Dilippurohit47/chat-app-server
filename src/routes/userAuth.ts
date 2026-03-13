@@ -25,41 +25,7 @@ declare module "express-serve-static-core" {
   }
 }
 
-const authMiddleware = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  try {
-    const cookie = req.cookies["chat-token"];
 
-    if (!cookie) {
-      return res.status(404).json({
-        message: "Please login first",
-      });
-    }
-    const decoded = jwt.verify(cookie, process.env.JWT_SECRET!);
-    if (!decoded) {
-      res.status(403).json({
-        success: false,
-        message: "Unauthorized",
-      });
-      return; 
-    }
-
-    if (typeof decoded === "string") {
-      return;
-    }
-    req.user = decoded;
-    next();
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({
-      succcess: false,
-      message: "Internal server error",
-    });
-  }
-};
 
 app.post("/sign-in", async (req, res) => {
   try {
@@ -342,7 +308,6 @@ app.post("/google/callback", async (req, res) => {
     });
 
     if (user) {
-      console.log("user",user)
    const token =   sendToken(res, user);
           await prisma.user.update({
       where: {

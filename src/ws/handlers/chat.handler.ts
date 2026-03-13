@@ -1,6 +1,6 @@
 import { WebSocket, WebSocketServer } from "ws";
-import { logWarn } from "../../helper";
 import { sendRecentChats } from "../../routes/messages";
+import { logWarn } from "../../utils/helper";
 
  export const chatHandler = async (data,ws:WebSocket,wss:WebSocketServer)=>{
 

@@ -1,17 +1,18 @@
 import express, { Request, Response } from "express";
 import { prisma } from "../infra/database/prisma";
+import  {verifyAccessToken } from "../middlewares/VerifyAccessToken"
 const app = express.Router();
 
-app.delete("/clear-chat", async (req: Request, res: Response) => {
+app.delete("/clear-chat/:id", verifyAccessToken ,async (req: Request, res: Response) => {
   try {
-    const { userId, chatId } = req.body;
+    const userId = req.user?.id
+    const chatId = req.params?.id
 if(!userId || !chatId){
   res.status(403).json({
     message:"Missing fields required"
   })
   return
 }
-
     const messages = await prisma.messages.findMany({
       where: { chatId: chatId },
       select: { id: true },
@@ -23,6 +24,7 @@ if(!userId || !chatId){
       })),
       skipDuplicates: true,
     });
+
     res.status(200).json({
       message:"Chat clear"
     })
@@ -36,9 +38,10 @@ if(!userId || !chatId){
   }
 });
 
-app.delete("/delete-chat", async (req: Request, res: Response) => {
+app.delete("/delete-chat/:id",verifyAccessToken, async (req: Request, res: Response) => {
   try {
-    const { userId, chatId } = req.body;
+    const chatId = req?.params?.id;
+    const userId = req.user?.id;
     if(!userId || !chatId){
 
       res.status(403).json({

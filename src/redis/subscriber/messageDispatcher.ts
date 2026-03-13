@@ -1,21 +1,20 @@
+import { SAVE_MESSAGE_JOB_OPTIONS } from "../../queue/jobConfig";
 
 
 
-export const createRedisMessageHandler = ({ saveMessage  ,sendRecentChats ,messageAcknowledge ,redis , prisma ,getUserSocket ,isUserConnected}) => {
+export const createRedisMessageHandler = ({ saveMessage  ,sendRecentChats ,messageAcknowledge ,redis , prisma ,getUserSocket ,isUserConnected , messageQueue}) => {
   return async (msg) => {
     const data = JSON.parse(msg.toString());
     if (data.type === "ping") return;
     if (data.type === "personal-msg") {
       const receiverId = data.receiverId;
       if (data.senderId && receiverId && data.receiverContent) {
-       let {messageSent , messageId}:{messageSent:boolean , messageId:string | null} =  await saveMessage(data.tempId,data.senderId, receiverId, data.isMedia ,data.receiverContent ,data.senderContent); 
-       if(!messageSent) return
-       
+        await messageQueue.add("save-message",data,SAVE_MESSAGE_JOB_OPTIONS)
        if(isUserConnected(data.senderId)){
         let ws  = getUserSocket(data.senderId)
         ws.send(JSON.stringify({
           type:"message-acknowledge",
-          messages:[{id:messageId , clientSideMessageId:data.tempId ,status:'sent'}],
+          messages:[{id:data.tempId ,clientSideMessageId:data.tempId ,status:'sent'}],
         }))
        }
 
@@ -68,9 +67,7 @@ export const createRedisMessageHandler = ({ saveMessage  ,sendRecentChats ,messa
                 chats: receiverRecentChats,
               })
             );
-          } else {
-            console.log(`❌ WebSocket not open for receiver (${receiverId})`); 
-          }
+          } 
         }     
       }
  
@@ -212,7 +209,6 @@ export const createRedisMessageHandler = ({ saveMessage  ,sendRecentChats ,messa
             messages:updatedMessages
           }))
         }
-        console.log("messages send")
       }
       
     }

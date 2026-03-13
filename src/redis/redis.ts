@@ -1,7 +1,7 @@
 import  {createClient ,RedisClientType} from "redis"
 import dotenv from "dotenv"
-import { mockRedisStore } from "./mockStoreRedis";
-dotenv.config()
+import { mockRedisStore } from "./mockStoreRedis"; 
+dotenv.config() 
 let redis: RedisClientType | any;
 if (process.env.NODE_ENV === "production") {
   redis = createClient({

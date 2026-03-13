@@ -5,6 +5,7 @@ import { createRedisMessageHandler } from "./messageDispatcher";
 import { prisma } from "../../infra/database/prisma";
 import { getUserSocket, isUserConnected } from "../../ws/connectionManager";
 import { saveMessage  ,messageAcknowledge ,sendRecentChats} from "../../routes/messages";
+import { messageQueue } from "../../queue/messageQueue";
 import redis from "../redis";
 dotenv.config()
 
@@ -43,7 +44,8 @@ const handleRedisMessage = createRedisMessageHandler({
   isUserConnected,
   redis,
   messageAcknowledge,
-  sendRecentChats
+  sendRecentChats,
+  messageQueue
 });
 
 

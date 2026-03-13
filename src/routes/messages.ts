@@ -48,7 +48,7 @@ import express, { Request, Response } from "express";
           },
           chatId:chat.id
         }
-      })
+      })  
     } else {  
     chat =  await prisma.chat.create({
         data: {
@@ -63,12 +63,14 @@ import express, { Request, Response } from "express";
           },
         }, 
       });
-    }
-    return chat
+    } 
+    return chat 
   } catch (error) {
     console.log("error in upserting recent chats",error);
   }
 };
+
+
 export const saveMessage = async (
   tempId:string,
   senderId: string,
@@ -81,20 +83,26 @@ export const saveMessage = async (
  
 const chat  = await upsertRecentChats(senderId,receiverId,receiverContent ,senderContent)
 if(!chat) return  {messageSent:false , messageId:null}
-let message = await prisma.messages.create({
-      data: {
-        id:tempId,
-        senderId: senderId,
-        receiverId: receiverId,
-        content: "content",
-        chatId: chat.id,
-        isMedia:isMedia,
-        senderContent:senderContent,
-        receiverContent:receiverContent,
-      },select:{
-        id:true
-      }
-    });
+let message = await prisma.messages.upsert({
+  where: {
+    id: tempId
+  },
+  update: {},  
+  create: {
+    id: tempId,
+    senderId: senderId,
+    receiverId: receiverId,
+    content: "content",
+    chatId: chat.id,
+    isMedia: isMedia,
+    senderContent: senderContent,
+    receiverContent: receiverContent
+  },
+  select: {
+    id: true
+  }
+});
+
     return {
       messageSent:true,
       messageId:message.id
@@ -151,14 +159,16 @@ interface getMessagesBody {
   cursor:string
 }
 
-app.get("/get-messages", async (req: Request<{},{},getMessagesBody>, res: Response) => {
+app.get("/get-messages",verifyAccessToken , async (req: Request<{},{},getMessagesBody>, res: Response) => {
   try {
-    const { senderId, receiverId, cursor } = req.query;
+    const {  receiverId, cursor } = req.query;
 
-   if(typeof receiverId !== "string"){
+    const senderId = req.user?.id;
+   
+   if(typeof receiverId !== "string" || typeof senderId !== "string"){
     res.status(404).json({
       success:false,
-      message:"Reciver id should be string"
+      message:"user id's should be string"
     })
     return
    }
@@ -290,7 +300,7 @@ app.post("/create-chats", async (req, res) => {
 
 app.get("/get-recent-chats",verifyAccessToken, async (req, res) => {
   try {
-    const userId = req.user.id as string;
+    const userId = req.user?.id as string;
 
     if (!userId) {
       res.status(404).json({
@@ -369,13 +379,16 @@ interface DeleteChatBody {
   receiverId:string,
   chatId:string,
 }
-app.put("/update-unreadmessage-count", async (req:Request<{},{},DeleteChatBody>, res:Response) => {
+app.put("/update-unreadmessage-count",verifyAccessToken ,  async (req:Request<{},{},DeleteChatBody>, res:Response) => {
   try { 
-    const { senderId, chatId , receiverId } = req.body;
+    const {  chatId , receiverId } = req.body;
+
+    let senderId = req?.user?.id
+
     let chat ;
     if(chatId){
 chat = await prisma.chat.findUnique({
-      where: {
+      where: {  
         id: chatId,
       },
     });
@@ -391,7 +404,7 @@ chat = await prisma.chat.findUnique({
       }) }
 
     const unreadCount = chat?.unreadCount as {userId:string} | null
-    if ( unreadCount && unreadCount.userId === receiverId) {
+    if ( unreadCount && unreadCount.userId === senderId) {
       await prisma.chat.update({
         where: {
           id: chatId || chat.id,

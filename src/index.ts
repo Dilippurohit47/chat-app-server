@@ -2,9 +2,9 @@
 import { connectSubscriber, startRedisSubscriber } from "./redis/subscriber/subsciberRedis";
 import { registerWebSocketHandlers } from "./ws/wsServer";
 import { startWsHeartbeat } from "./ws/startWsHearBeat";
-import { server, wss } from "./server";
+import { server, wss } from "./app/server";
 import "./infra/vector/vector-db"
-
+import  "./queue/messageWorker"
 process.on("unhandledRejection", (reason, promise) => {
   console.error("🔥 Unhandled Promise Rejection:", reason);
 });

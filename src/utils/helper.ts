@@ -42,3 +42,8 @@ export const formatZodError = (issues:ZodIssue[]) =>{
   })
   return error
 }
+
+
+export const logWarn = (error:string)=>{
+    // console.log(error)
+} 

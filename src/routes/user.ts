@@ -4,7 +4,7 @@ import { prisma } from "../infra/database/prisma";
 
 const app = express.Router()
 
-app.get("/get-public-key/:id",async(req,res) =>{
+app.get("/get-public-key/:id",async(req:Request,res:Response) =>{
     try {
         const id= req.params.id as string
         const user = await prisma.user.findUnique({

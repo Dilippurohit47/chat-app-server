@@ -1,9 +1,9 @@
 
 import { WebSocket } from "ws";
-import { logWarn } from "../../helper";
 // import { getInfoFromCollection } from "../../infra/vector/vector-db";
 import { getChatBotResponse } from "../../routes/aiChatBot";
 import { getUserSocket } from "../connectionManager";
+import { logWarn } from "../../utils/helper";
 
 export const chatbotHandler = (data,ws:WebSocket) =>{
     switch (data.type) {
