@@ -5,7 +5,6 @@ import { SAVE_MESSAGE_JOB_OPTIONS } from "../../queue/jobConfig";
 export const createRedisMessageHandler = ({ saveMessage  ,sendRecentChats ,messageAcknowledge ,redis , prisma ,getUserSocket ,isUserConnected , messageQueue}) => {
   return async (msg) => {
     const data = JSON.parse(msg.toString());
-    if (data.type === "ping") return;
     if (data.type === "personal-msg") {
       const receiverId = data.receiverId;
       if (data.senderId && receiverId && data.receiverContent) {

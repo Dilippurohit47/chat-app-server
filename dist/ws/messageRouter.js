@@ -31,7 +31,7 @@ const messageRouter = (data, ws, wss) => __awaiter(void 0, void 0, void 0, funct
         case "get-chatbot-response":
             return (0, chatbot_handler_1.chatbotHandler)(data, ws);
         default:
-            console.warn("Unknown Ws Handler", data.type);
+            // console.warn("Unknown Ws Handler", data.type);
     }
 });
 exports.messageRouter = messageRouter;

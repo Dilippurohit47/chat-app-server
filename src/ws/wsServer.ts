@@ -9,10 +9,8 @@ export const registerWebSocketHandlers = (wss: WebSocketServer) => {
     ws.on("pong", () => {
       ws.isAlive = true;
     });
-    ws.on("message", async (m) => {
-      await publisher.publish("messages", m.toString());
-      const data = JSON.parse(m.toString());
-      await messageRouter(data,ws,wss)
+    ws.on("message", async (message) => {
+  await messageRouter(message,ws, wss);
     });
     ws.on("close", ()=>{
       handleConnectionClosed(ws,wss)
