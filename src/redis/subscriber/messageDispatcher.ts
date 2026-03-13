@@ -1,4 +1,5 @@
 import { SAVE_MESSAGE_JOB_OPTIONS } from "../../queue/jobConfig";
+import { getActiveChatId } from "../../ws/connectionManager";
 
 
 
@@ -8,14 +9,19 @@ export const createRedisMessageHandler = ({ saveMessage  ,sendRecentChats ,messa
     if (data.type === "personal-msg") {
       const receiverId = data.receiverId;
       if (data.senderId && receiverId && data.receiverContent) {
-        await messageQueue.add("save-message",data,SAVE_MESSAGE_JOB_OPTIONS)
-       if(isUserConnected(data.senderId)){
+
+         let isChatActive =  getActiveChatId(receiverId)  === data.chatId
+        let messageStatus = isChatActive ? "seen" : "sent"
+
+        await messageQueue.add("save-message",{...data , isChatActive},SAVE_MESSAGE_JOB_OPTIONS)
+
+      
+
         let ws  = getUserSocket(data.senderId)
         ws.send(JSON.stringify({
           type:"message-acknowledge",
-          messages:[{id:data.tempId ,clientSideMessageId:data.tempId ,status:'sent'}],
+          messages:[{id:data.tempId ,clientSideMessageId:data.tempId ,status:messageStatus}],
         }))
-       }
 
          if (isUserConnected(receiverId)) {
         let ws  = getUserSocket(receiverId);
@@ -39,7 +45,6 @@ export const createRedisMessageHandler = ({ saveMessage  ,sendRecentChats ,messa
             })
         }
         if(receiverRecentChats){
-          
          redis.set( `user:${data.receiverId}:chats`,JSON.stringify(receiverRecentChats), { 
               EX:60*10 
             })

@@ -10,7 +10,8 @@ new Worker("message-persistence", async (job) => {
       data.receiverId,
       data.isMedia,
       data.receiverContent,
-      data.senderContent
+      data.senderContent,
+      data.isChatActive,
     );
   },
   { connection: queueRedis }

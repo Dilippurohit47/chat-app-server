@@ -2,11 +2,14 @@ import { verifyAccessToken } from "../middlewares/VerifyAccessToken";
 import redis from "../redis/redis";
 import { prisma } from "../infra/database/prisma";
 import express, { Request, Response } from "express";
+
+
  export const upsertRecentChats = async (
   senderId: string,
   receiverId: string,
   receiverContent: string,
-  senderContent:string
+  senderContent:string,
+  isChatActive
 ) => {
   try {
     let chat = await prisma.chat.findFirst({
@@ -32,11 +35,11 @@ import express, { Request, Response } from "express";
           receiverId:receiverId,
           lastMessageCreatedAt: new Date(),
           unreadCount: {
-            userId: receiverId,
-            unreadMessages:
+            userId: !isChatActive ?  receiverId : null,
+            unreadMessages: !isChatActive ?
               unreadCount?.unreadMessages != null
                 ? unreadCount.unreadMessages + 1
-                : 1,
+                : 1 : 0
           },
         },
       });
@@ -78,10 +81,11 @@ export const saveMessage = async (
   isMedia:boolean,
   receiverContent:string,
   senderContent:string,
+  isChatActive:boolean
 ) => {
   try { 
  
-const chat  = await upsertRecentChats(senderId,receiverId,receiverContent ,senderContent)
+const chat  = await upsertRecentChats(senderId,receiverId,receiverContent ,senderContent  ,isChatActive)
 if(!chat) return  {messageSent:false , messageId:null}
 let message = await prisma.messages.upsert({
   where: {
