@@ -53,6 +53,10 @@ delivered
 seen
 }
 
+enum MessageType {
+  TEXT
+  MEDIA
+}
 model Chat {
   id          String   @id @default(uuid())
   senderId String
@@ -60,6 +64,8 @@ model Chat {
   lastMessageForSender String
   lastMessageForReceiver String
   lastMessageCreatedAt  DateTime @default(now())
+   lastMessageType MessageType @default(TEXT)
+
   unreadCount Json? 
   user1 User @relation(name: "user1", fields: [senderId], references: [id])
   user2 User @relation(name: "user2", fields: [receiverId], references: [id])
