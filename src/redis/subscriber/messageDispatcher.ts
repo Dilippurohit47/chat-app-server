@@ -1,28 +1,27 @@
 import { SAVE_MESSAGE_JOB_OPTIONS } from "../../queue/jobConfig";
+import { upsertRecentChats } from "../../routes/messages";
 import { getActiveChatId } from "../../ws/connectionManager";
 
 
 
-export const createRedisMessageHandler = ({ saveMessage  ,sendRecentChats ,messageAcknowledge ,redis , prisma ,getUserSocket ,isUserConnected , messageQueue}) => {
-  return async (msg) => {
+export const createRedisMessageHandler = ({ saveMessage ,sendRecentChats ,messageAcknowledge ,redis , prisma ,getUserSocket ,isUserConnected , messageQueue}) => {
+  return async (msg) => { 
     const data = JSON.parse(msg.toString());
     if (data.type === "personal-msg") {
-      const receiverId = data.receiverId;
-      if (data.senderId && receiverId && data.receiverContent) {
+      const receiverId = data.receiverId;  
 
-         let isChatActive =  getActiveChatId(receiverId)  === data.chatId
+  let isChatActive =  getActiveChatId(receiverId)  === data.chatId
         let messageStatus = isChatActive ? "seen" : "sent"
 
         await messageQueue.add("save-message",{...data , isChatActive},SAVE_MESSAGE_JOB_OPTIONS)
 
-      
-
-        let ws  = getUserSocket(data.senderId)
+                let ws = getUserSocket(data.senderId)
         ws.send(JSON.stringify({
           type:"message-acknowledge",
           messages:[{id:data.tempId ,clientSideMessageId:data.tempId ,status:messageStatus}],
         }))
-
+ 
+    if (data.senderId && receiverId && data.receiverContent) {
          if (isUserConnected(receiverId)) {
         let ws  = getUserSocket(receiverId);
         ws.send(
@@ -37,8 +36,15 @@ export const createRedisMessageHandler = ({ saveMessage  ,sendRecentChats ,messa
           })
         );
       }
-        const senderRecentChats = await sendRecentChats(data.senderId);
+
+    
+}
+
+await upsertRecentChats(data.senderId , data.receiverId ,data.receiverContent ,data.senderContent , data.isMedia ,isChatActive)
+   const senderRecentChats = await sendRecentChats(data.senderId);
         const receiverRecentChats = await sendRecentChats(data.receiverId);
+
+
         if(senderRecentChats){
   redis.set( `user:${data.senderId}:chats`,JSON.stringify(senderRecentChats),{
               EX:60*10
@@ -55,15 +61,15 @@ export const createRedisMessageHandler = ({ saveMessage  ,sendRecentChats ,messa
           if (senderWs && senderWs.readyState === 1) {
             senderWs.send(
               JSON.stringify({ 
-                type: "recent-chats",
+                type: "recent-chats",   
                 chats: senderRecentChats,
               })
             ); 
           }
         } 
 
-        if (isUserConnected(receiverId)) {
-          let receiverWs = getUserSocket(receiverId);
+        if (isUserConnected(data.receiverId)) {
+          let receiverWs = getUserSocket(data.receiverId); 
           if (receiverWs && receiverWs.readyState === 1) { 
             receiverWs.send(
               JSON.stringify({
@@ -73,9 +79,8 @@ export const createRedisMessageHandler = ({ saveMessage  ,sendRecentChats ,messa
             );
           } 
         }     
-      }
- 
- 
+
+
     }
     if (data.type === "group-message") {
       const groupId = data.groupId;

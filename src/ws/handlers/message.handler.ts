@@ -8,4 +8,4 @@ switch (data.type) {
         logWarn(`Unknown handler type ${data.type}`)
 }
 
-}
+} 

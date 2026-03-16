@@ -31,12 +31,14 @@ app.post("/get-presigned-url-s3",async(req,res) =>{
     })
   }
 })
+
 app.post("/get-presigned-url-s3-media",async(req,res) =>{
   try {
     const command = new PutObjectCommand({
       Bucket: "chat-app-bucket47", 
       Key: `media-images/${Date.now()}-${"media"}`,
-      ContentType: "jpeg",
+      // ContentType: "image/webp",
+      ChecksumAlgorithm:undefined
     });
   
     const url =  await getSignedUrl(s3, command, { expiresIn: 60 });  
@@ -50,4 +52,4 @@ app.post("/get-presigned-url-s3-media",async(req,res) =>{
   }
 })
 
-export default app
+export default app 

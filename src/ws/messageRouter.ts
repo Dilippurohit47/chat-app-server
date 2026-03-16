@@ -16,7 +16,7 @@ export const messageRouter = async (
   connectedUserId:string
 ) => {
 
-  const rawData = message.toString()
+  const rawData = message.toString() 
   const data = JSON.parse(rawData)
   
    if (pubSubCases.includes(data.type)) {

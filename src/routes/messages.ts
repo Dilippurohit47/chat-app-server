@@ -9,7 +9,8 @@ import express, { Request, Response } from "express";
   receiverId: string,
   receiverContent: string,
   senderContent:string,
-  isChatActive
+  isChatActive:boolean,
+  isMedia:boolean
 ) => {
   try {
     let chat = await prisma.chat.findFirst({
@@ -34,6 +35,7 @@ import express, { Request, Response } from "express";
           senderId:senderId,
           receiverId:receiverId,
           lastMessageCreatedAt: new Date(),
+          lastMessageType : isMedia ? "MEDIA" :"TEXT",
           unreadCount: {
             userId: !isChatActive ?  receiverId : null,
             unreadMessages: !isChatActive ?
@@ -60,6 +62,7 @@ import express, { Request, Response } from "express";
           lastMessageForSender: senderContent,
           lastMessageForReceiver:receiverContent,
           lastMessageCreatedAt: new Date(),
+          lastMessageType : isMedia ? "MEDIA" :"TEXT",
             unreadCount: {
             userId: receiverId,
             unreadMessages:1
@@ -85,7 +88,7 @@ export const saveMessage = async (
 ) => {
   try { 
  
-const chat  = await upsertRecentChats(senderId,receiverId,receiverContent ,senderContent  ,isChatActive)
+const chat  = await upsertRecentChats(senderId,receiverId,receiverContent ,senderContent  ,isChatActive , isMedia)
 if(!chat) return  {messageSent:false , messageId:null}
 let message = await prisma.messages.upsert({
   where: {
@@ -121,7 +124,6 @@ export const messageAcknowledge = async({chatId ,senderId ,receiverId}:{chatId:s
 try {
     if(!chatId) return []
 const updatedMessages = await prisma.$transaction(async (tx) => {
-  // 1. Get messages first
   const messages = await tx.messages.findMany({
     where: {
       chatId,
@@ -130,7 +132,6 @@ const updatedMessages = await prisma.$transaction(async (tx) => {
       status: "sent",
     },
   });
-  // 2. Update them
   await tx.messages.updateMany({
     where: {
       chatId,
@@ -143,7 +144,6 @@ const updatedMessages = await prisma.$transaction(async (tx) => {
     },
   });
 
-  // 3. Return previously fetched messages (now logically "seen")
   return messages.map(m => ({ ...m, status: "seen" }));
 });
 
@@ -341,10 +341,24 @@ app.get("/get-recent-chats",verifyAccessToken, async (req, res) => {
         lastMessageCreatedAt: "desc",
       },
       include: {
-        user1: true,
-        user2: true,
+        user1: {
+          select:{
+            id:true,
+            profileUrl:true,
+            name:true,
+            publickey:true,
+          }
+        },
+        user2: {
+          select:{
+            id:true,
+            profileUrl:true,
+            name:true,
+            publickey:true
+          }
+        },
         deleteBy: true,
-      },
+      }
     });
 
     const formattedChats = chats.map((chat) => {
@@ -354,6 +368,7 @@ app.get("/get-recent-chats",verifyAccessToken, async (req, res) => {
         lastMessageForSender: chat.lastMessageForSender,
         lastMessageForReceiver: chat.lastMessageForReceiver,
         lastMessageCreatedAt: chat.lastMessageCreatedAt,
+        lastMessageType:chat.lastMessageType,
         unreadCount: chat.unreadCount,
         senderId:chat.senderId,
         receiverId:chat.receiverId,
@@ -436,7 +451,7 @@ chat = await prisma.chat.findUnique({
 export const sendRecentChats = async (userId: string) => {
   try {  
     if (!userId) { 
-      return;
+      return; 
     }
     const chats = await prisma.chat.findMany({
   where: {
@@ -448,11 +463,29 @@ export const sendRecentChats = async (userId: string) => {
       orderBy: {
         lastMessageCreatedAt: "desc",
       },
-      include: {
-        user1: true,
-        user2: true,
-      },
+  include: {
+        user1: {
+          select:{
+            id:true,
+            profileUrl:true,
+            name:true,
+            publickey:true,
+          }
+        },
+        user2: {
+          select:{
+            id:true,
+            profileUrl:true,
+            name:true,
+            publickey:true
+          }
+        },
+        deleteBy: true,
+      }
+    
     });
+
+
     const formattedChats = chats.map((chat) => {
       const otherUser = chat.user1.id === userId ? chat.user2 : chat.user1;
       return {
@@ -460,6 +493,7 @@ export const sendRecentChats = async (userId: string) => {
         lastMessageForReceiver: chat.lastMessageForReceiver,
         lastMessageForSender: chat.lastMessageForSender,
         senderId:chat.senderId,
+        lastMessageType:chat?.lastMessageType,
         receiverId:chat.receiverId,
         lastMessageCreatedAt: chat.lastMessageCreatedAt,
         unreadCount: chat.unreadCount,

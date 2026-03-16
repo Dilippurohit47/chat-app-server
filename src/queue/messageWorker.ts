@@ -1,6 +1,8 @@
 import { Worker } from "bullmq";
 import queueRedis from "./queueRedis";
-import { saveMessage  } from "../routes/messages";
+import { saveMessage, sendRecentChats  } from "../routes/messages";
+import { getUserSocket, isUserConnected } from "../ws/connectionManager";
+import redis from "../redis/redis";
 
 new Worker("message-persistence", async (job) => {
     const data = job.data;
@@ -13,6 +15,8 @@ new Worker("message-persistence", async (job) => {
       data.senderContent,
       data.isChatActive,
     );
+
+
   },
   { connection: queueRedis }
 ); 
