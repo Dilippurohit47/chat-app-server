@@ -77,6 +77,24 @@ import express, { Request, Response } from "express";
 };
 
 
+
+const getChatWithUsers = async(senderId,receiverId)=>{
+  try {
+        let chat = await prisma.chat.findFirst({
+      where: {
+        OR: [
+          { senderId: senderId, receiverId: receiverId },
+          { senderId: receiverId, receiverId: senderId },
+        ],
+      },
+    });
+    return chat
+  } catch (error) {
+    throw error
+  }
+}
+
+
 export const saveMessage = async (
   tempId:string,
   senderId: string,
@@ -84,11 +102,9 @@ export const saveMessage = async (
   isMedia:boolean,
   receiverContent:string,
   senderContent:string,
-  isChatActive:boolean
 ) => {
   try { 
- 
-const chat  = await upsertRecentChats(senderId,receiverId,receiverContent ,senderContent  ,isChatActive , isMedia)
+const chat  = await getChatWithUsers(senderId,receiverId )
 if(!chat) return  {messageSent:false , messageId:null}
 let message = await prisma.messages.upsert({
   where: {
@@ -118,7 +134,7 @@ let message = await prisma.messages.upsert({
     console.log("error in saving message",error);
     return {messageSent:false,messageId:null};
   }
-};
+}; 
 
 export const messageAcknowledge = async({chatId ,senderId ,receiverId}:{chatId:string , senderId:string ,receiverId:string})=>{
 try {
