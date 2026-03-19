@@ -8,7 +8,6 @@ RUN npm install --omit=dev
 COPY dist ./dist
 COPY prisma ./prisma
 COPY docker-entrypoint.sh .
-COPY .env .env
 
 RUN npx prisma generate
 RUN chmod +x docker-entrypoint.sh
