@@ -12,6 +12,9 @@ import express, { Request, Response } from "express";
   isChatActive:boolean,
   isMedia:boolean
 ) => {
+
+
+
   try {
     let chat = await prisma.chat.findFirst({
       where: {
@@ -34,7 +37,7 @@ import express, { Request, Response } from "express";
           lastMessageForReceiver:receiverContent,
           senderId:senderId,
           receiverId:receiverId,
-          lastMessageCreatedAt: new Date(),
+          lastMessageCreatedAt: new Date(), 
           lastMessageType : isMedia ? "MEDIA" :"TEXT",
           unreadCount: {
             userId: !isChatActive ?  receiverId : null,
@@ -54,7 +57,9 @@ import express, { Request, Response } from "express";
           chatId:chat.id
         }
       })  
-    } else {  
+    } else {
+      
+      
     chat =  await prisma.chat.create({
         data: {
           senderId: senderId,
@@ -70,6 +75,9 @@ import express, { Request, Response } from "express";
         }, 
       });
     } 
+
+
+
     return chat 
   } catch (error) {
     console.log("error in upserting recent chats",error);

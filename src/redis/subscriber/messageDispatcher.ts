@@ -40,7 +40,8 @@ export const createRedisMessageHandler = ({ saveMessage ,sendRecentChats ,messag
     
 }
 
-await upsertRecentChats(data.senderId , data.receiverId ,data.receiverContent ,data.senderContent , data.isMedia ,isChatActive)
+
+await upsertRecentChats(data.senderId , data.receiverId ,data.receiverContent ,data.senderContent , isChatActive , data.isMedia)
    const senderRecentChats = await sendRecentChats(data.senderId);
         const receiverRecentChats = await sendRecentChats(data.receiverId);
 
