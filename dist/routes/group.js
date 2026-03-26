@@ -142,7 +142,6 @@ app.delete("/delete-group/:groupId/:userId", (req, res) => __awaiter(void 0, voi
     try {
         const { groupId, userId } = req.params;
         if (!groupId || !userId) {
-            console.log("user id and group id required for deleting group");
             res.status(403).json({
                 message: "Insufficent credentials"
             });

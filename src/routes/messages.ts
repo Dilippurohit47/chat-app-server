@@ -67,7 +67,7 @@ import express, { Request, Response } from "express";
           lastMessageForSender: senderContent,
           lastMessageForReceiver:receiverContent,
           lastMessageCreatedAt: new Date(),
-          lastMessageType : isMedia ? "MEDIA" :"TEXT",
+          lastMessageType : isMedia ? "MEDIA" :"TEXT", // new update 
             unreadCount: {
             userId: receiverId,
             unreadMessages:1

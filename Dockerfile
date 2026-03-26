@@ -5,15 +5,16 @@ WORKDIR /app
 ENV NODE_ENV=production
 
 COPY package*.json ./
-RUN npm install --omit=dev
+RUN npm install
 
-COPY dist ./dist
-COPY prisma ./prisma
-COPY docker-entrypoint.sh .
+COPY . .
+
+RUN npm run build   
 
 RUN apk add --no-cache netcat-openbsd
 
 RUN npx prisma generate
+
 RUN chmod +x docker-entrypoint.sh
 
 EXPOSE 8080

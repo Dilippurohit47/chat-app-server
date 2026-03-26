@@ -8,25 +8,14 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.chatHandler = void 0;
-const messages_1 = require("../../routes/messages");
-const helper_1 = require("../../utils/helper");
-const chatHandler = (data, ws, wss) => __awaiter(void 0, void 0, void 0, function* () {
-    switch (data.type) {
-        case "get-recent-chats":
-            return getRecentChatsHandler(data, ws);
-        default:
-            (0, helper_1.logWarn)(`unknown handler ${data.type}`);
-    }
-});
-exports.chatHandler = chatHandler;
-const getRecentChatsHandler = (data, ws) => __awaiter(void 0, void 0, void 0, function* () {
-    const recentChats = yield (0, messages_1.sendRecentChats)(data.userId);
-    if (!ws)
-        return;
-    ws.send(JSON.stringify({
-        type: "recent-chats",
-        chats: recentChats,
-    }));
-});
+const bullmq_1 = require("bullmq");
+const queueRedis_1 = __importDefault(require("./queueRedis"));
+const messages_1 = require("../routes/messages");
+new bullmq_1.Worker("message-persistence", (job) => __awaiter(void 0, void 0, void 0, function* () {
+    const data = job.data;
+    yield (0, messages_1.saveMessage)(data.tempId, data.senderId, data.receiverId, data.isMedia, data.receiverContent, data.senderContent, data.isChatActive);
+}), { connection: queueRedis_1.default });

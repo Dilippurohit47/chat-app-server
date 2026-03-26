@@ -10,10 +10,10 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.chatbotHandler = void 0;
-const helper_1 = require("../../helper");
 // import { getInfoFromCollection } from "../../infra/vector/vector-db";
 const aiChatBot_1 = require("../../routes/aiChatBot");
 const connectionManager_1 = require("../connectionManager");
+const helper_1 = require("../../utils/helper");
 const chatbotHandler = (data, ws) => {
     switch (data.type) {
         case "get-chatbot-response":

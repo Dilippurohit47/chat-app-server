@@ -9,24 +9,16 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.chatHandler = void 0;
-const messages_1 = require("../../routes/messages");
-const helper_1 = require("../../utils/helper");
-const chatHandler = (data, ws, wss) => __awaiter(void 0, void 0, void 0, function* () {
+exports.activeChatHandler = void 0;
+const connectionManager_1 = require("../connectionManager");
+const activeChatHandler = (data, connectedUserId) => __awaiter(void 0, void 0, void 0, function* () {
     switch (data.type) {
-        case "get-recent-chats":
-            return getRecentChatsHandler(data, ws);
+        case "active-chat:set":
+            return (0, connectionManager_1.addActiveChat)(connectedUserId, data.chatId);
+        case "active-chat:clear":
+            return (0, connectionManager_1.clearActiveChat)(connectedUserId);
         default:
-            (0, helper_1.logWarn)(`unknown handler ${data.type}`);
+            console.warn("Unknown handler type", data.type);
     }
 });
-exports.chatHandler = chatHandler;
-const getRecentChatsHandler = (data, ws) => __awaiter(void 0, void 0, void 0, function* () {
-    const recentChats = yield (0, messages_1.sendRecentChats)(data.userId);
-    if (!ws)
-        return;
-    ws.send(JSON.stringify({
-        type: "recent-chats",
-        chats: recentChats,
-    }));
-});
+exports.activeChatHandler = activeChatHandler;

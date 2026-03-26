@@ -17,7 +17,7 @@ const VerifyAccessToken_1 = require("../middlewares/VerifyAccessToken");
 const redis_1 = __importDefault(require("../redis/redis"));
 const prisma_1 = require("../infra/database/prisma");
 const express_1 = __importDefault(require("express"));
-const upsertRecentChats = (senderId, receiverId, receiverContent, senderContent) => __awaiter(void 0, void 0, void 0, function* () {
+const upsertRecentChats = (senderId, receiverId, receiverContent, senderContent, isChatActive, isMedia) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         let chat = yield prisma_1.prisma.chat.findFirst({
             where: {
@@ -39,11 +39,13 @@ const upsertRecentChats = (senderId, receiverId, receiverContent, senderContent)
                     senderId: senderId,
                     receiverId: receiverId,
                     lastMessageCreatedAt: new Date(),
+                    lastMessageType: isMedia ? "MEDIA" : "TEXT",
                     unreadCount: {
-                        userId: receiverId,
-                        unreadMessages: (unreadCount === null || unreadCount === void 0 ? void 0 : unreadCount.unreadMessages) != null
-                            ? unreadCount.unreadMessages + 1
-                            : 1,
+                        userId: !isChatActive ? receiverId : null,
+                        unreadMessages: !isChatActive ?
+                            (unreadCount === null || unreadCount === void 0 ? void 0 : unreadCount.unreadMessages) != null
+                                ? unreadCount.unreadMessages + 1
+                                : 1 : 0
                     },
                 },
             });
@@ -64,6 +66,7 @@ const upsertRecentChats = (senderId, receiverId, receiverContent, senderContent)
                     lastMessageForSender: senderContent,
                     lastMessageForReceiver: receiverContent,
                     lastMessageCreatedAt: new Date(),
+                    lastMessageType: isMedia ? "MEDIA" : "TEXT",
                     unreadCount: {
                         userId: receiverId,
                         unreadMessages: 1
@@ -78,13 +81,33 @@ const upsertRecentChats = (senderId, receiverId, receiverContent, senderContent)
     }
 });
 exports.upsertRecentChats = upsertRecentChats;
+const getChatWithUsers = (senderId, receiverId) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        let chat = yield prisma_1.prisma.chat.findFirst({
+            where: {
+                OR: [
+                    { senderId: senderId, receiverId: receiverId },
+                    { senderId: receiverId, receiverId: senderId },
+                ],
+            },
+        });
+        return chat;
+    }
+    catch (error) {
+        throw error;
+    }
+});
 const saveMessage = (tempId, senderId, receiverId, isMedia, receiverContent, senderContent) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const chat = yield (0, exports.upsertRecentChats)(senderId, receiverId, receiverContent, senderContent);
+        const chat = yield getChatWithUsers(senderId, receiverId);
         if (!chat)
             return { messageSent: false, messageId: null };
-        let message = yield prisma_1.prisma.messages.create({
-            data: {
+        let message = yield prisma_1.prisma.messages.upsert({
+            where: {
+                id: tempId
+            },
+            update: {},
+            create: {
                 id: tempId,
                 senderId: senderId,
                 receiverId: receiverId,
@@ -92,8 +115,9 @@ const saveMessage = (tempId, senderId, receiverId, isMedia, receiverContent, sen
                 chatId: chat.id,
                 isMedia: isMedia,
                 senderContent: senderContent,
-                receiverContent: receiverContent,
-            }, select: {
+                receiverContent: receiverContent
+            },
+            select: {
                 id: true
             }
         });
@@ -113,7 +137,6 @@ const messageAcknowledge = (_a) => __awaiter(void 0, [_a], void 0, function* ({ 
         if (!chatId)
             return [];
         const updatedMessages = yield prisma_1.prisma.$transaction((tx) => __awaiter(void 0, void 0, void 0, function* () {
-            // 1. Get messages first
             const messages = yield tx.messages.findMany({
                 where: {
                     chatId,
@@ -122,7 +145,6 @@ const messageAcknowledge = (_a) => __awaiter(void 0, [_a], void 0, function* ({ 
                     status: "sent",
                 },
             });
-            // 2. Update them
             yield tx.messages.updateMany({
                 where: {
                     chatId,
@@ -134,7 +156,6 @@ const messageAcknowledge = (_a) => __awaiter(void 0, [_a], void 0, function* ({ 
                     status: "seen",
                 },
             });
-            // 3. Return previously fetched messages (now logically "seen")
             return messages.map(m => (Object.assign(Object.assign({}, m), { status: "seen" })));
         }));
         return updatedMessages;
@@ -146,13 +167,15 @@ const messageAcknowledge = (_a) => __awaiter(void 0, [_a], void 0, function* ({ 
 });
 exports.messageAcknowledge = messageAcknowledge;
 const app = express_1.default.Router();
-app.get("/get-messages", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+app.get("/get-messages", VerifyAccessToken_1.verifyAccessToken, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
     try {
-        const { senderId, receiverId, cursor } = req.query;
-        if (typeof receiverId !== "string") {
+        const { receiverId, cursor } = req.query;
+        const senderId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
+        if (typeof receiverId !== "string" || typeof senderId !== "string") {
             res.status(404).json({
                 success: false,
-                message: "Reciver id should be string"
+                message: "user id's should be string"
             });
             return;
         }
@@ -278,8 +301,9 @@ app.post("/create-chats", (req, res) => __awaiter(void 0, void 0, void 0, functi
     }
 }));
 app.get("/get-recent-chats", VerifyAccessToken_1.verifyAccessToken, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
     try {
-        const userId = req.user.id;
+        const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
         if (!userId) {
             res.status(404).json({
                 message: "Login first",
@@ -313,14 +337,28 @@ app.get("/get-recent-chats", VerifyAccessToken_1.verifyAccessToken, (req, res) =
                 lastMessageCreatedAt: "desc",
             },
             include: {
-                user1: true,
-                user2: true,
+                user1: {
+                    select: {
+                        id: true,
+                        profileUrl: true,
+                        name: true,
+                        publickey: true,
+                    }
+                },
+                user2: {
+                    select: {
+                        id: true,
+                        profileUrl: true,
+                        name: true,
+                        publickey: true
+                    }
+                },
                 deleteBy: true,
-            },
+            }
         });
         const formattedChats = chats.map((chat) => {
             const otherUser = chat.user1.id === userId ? chat.user2 : chat.user1;
-            return Object.assign({ chatId: chat.id, lastMessageForSender: chat.lastMessageForSender, lastMessageForReceiver: chat.lastMessageForReceiver, lastMessageCreatedAt: chat.lastMessageCreatedAt, unreadCount: chat.unreadCount, senderId: chat.senderId, receiverId: chat.receiverId }, otherUser);
+            return Object.assign({ chatId: chat.id, lastMessageForSender: chat.lastMessageForSender, lastMessageForReceiver: chat.lastMessageForReceiver, lastMessageCreatedAt: chat.lastMessageCreatedAt, lastMessageType: chat.lastMessageType, unreadCount: chat.unreadCount, senderId: chat.senderId, receiverId: chat.receiverId }, otherUser);
         });
         redis_1.default.set(`user:${userId}:chats`, JSON.stringify(formattedChats), {
             EX: 60 * 10
@@ -337,9 +375,11 @@ app.get("/get-recent-chats", VerifyAccessToken_1.verifyAccessToken, (req, res) =
         });
     }
 }));
-app.put("/update-unreadmessage-count", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+app.put("/update-unreadmessage-count", VerifyAccessToken_1.verifyAccessToken, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
     try {
-        const { senderId, chatId, receiverId } = req.body;
+        const { chatId, receiverId } = req.body;
+        let senderId = (_a = req === null || req === void 0 ? void 0 : req.user) === null || _a === void 0 ? void 0 : _a.id;
         let chat;
         if (chatId) {
             chat = yield prisma_1.prisma.chat.findUnique({
@@ -357,7 +397,7 @@ app.put("/update-unreadmessage-count", (req, res) => __awaiter(void 0, void 0, v
             });
         }
         const unreadCount = chat === null || chat === void 0 ? void 0 : chat.unreadCount;
-        if (unreadCount && unreadCount.userId === receiverId) {
+        if (unreadCount && unreadCount.userId === senderId) {
             yield prisma_1.prisma.chat.update({
                 where: {
                     id: chatId || chat.id,
@@ -397,13 +437,28 @@ const sendRecentChats = (userId) => __awaiter(void 0, void 0, void 0, function* 
                 lastMessageCreatedAt: "desc",
             },
             include: {
-                user1: true,
-                user2: true,
-            },
+                user1: {
+                    select: {
+                        id: true,
+                        profileUrl: true,
+                        name: true,
+                        publickey: true,
+                    }
+                },
+                user2: {
+                    select: {
+                        id: true,
+                        profileUrl: true,
+                        name: true,
+                        publickey: true
+                    }
+                },
+                deleteBy: true,
+            }
         });
         const formattedChats = chats.map((chat) => {
             const otherUser = chat.user1.id === userId ? chat.user2 : chat.user1;
-            return Object.assign({ chatId: chat.id, lastMessageForReceiver: chat.lastMessageForReceiver, lastMessageForSender: chat.lastMessageForSender, senderId: chat.senderId, receiverId: chat.receiverId, lastMessageCreatedAt: chat.lastMessageCreatedAt, unreadCount: chat.unreadCount }, otherUser);
+            return Object.assign({ chatId: chat.id, lastMessageForReceiver: chat.lastMessageForReceiver, lastMessageForSender: chat.lastMessageForSender, senderId: chat.senderId, lastMessageType: chat === null || chat === void 0 ? void 0 : chat.lastMessageType, receiverId: chat.receiverId, lastMessageCreatedAt: chat.lastMessageCreatedAt, unreadCount: chat.unreadCount }, otherUser);
         });
         return formattedChats;
     }

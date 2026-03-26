@@ -10,7 +10,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.messageHandler = void 0;
-const helper_1 = require("../../helper");
+const helper_1 = require("../../utils/helper");
 const messageHandler = (data, ws, wss) => __awaiter(void 0, void 0, void 0, function* () {
     switch (data.type) {
         default:

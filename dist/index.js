@@ -12,8 +12,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const subsciberRedis_1 = require("./redis/subscriber/subsciberRedis");
 const wsServer_1 = require("./ws/wsServer");
 const startWsHearBeat_1 = require("./ws/startWsHearBeat");
-const server_1 = require("./server");
+const server_1 = require("./app/server");
 require("./infra/vector/vector-db");
+require("./queue/messageWorker");
 process.on("unhandledRejection", (reason, promise) => {
     console.error("🔥 Unhandled Promise Rejection:", reason);
 });

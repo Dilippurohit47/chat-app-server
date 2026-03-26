@@ -14,10 +14,13 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const prisma_1 = require("../infra/database/prisma");
+const VerifyAccessToken_1 = require("../middlewares/VerifyAccessToken");
 const app = express_1.default.Router();
-app.delete("/clear-chat", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+app.delete("/clear-chat/:id", VerifyAccessToken_1.verifyAccessToken, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a, _b;
     try {
-        const { userId, chatId } = req.body;
+        const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
+        const chatId = (_b = req.params) === null || _b === void 0 ? void 0 : _b.id;
         if (!userId || !chatId) {
             res.status(403).json({
                 message: "Missing fields required"
@@ -47,9 +50,11 @@ app.delete("/clear-chat", (req, res) => __awaiter(void 0, void 0, void 0, functi
         });
     }
 }));
-app.delete("/delete-chat", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+app.delete("/delete-chat/:id", VerifyAccessToken_1.verifyAccessToken, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a, _b;
     try {
-        const { userId, chatId } = req.body;
+        const chatId = (_a = req === null || req === void 0 ? void 0 : req.params) === null || _a === void 0 ? void 0 : _a.id;
+        const userId = (_b = req.user) === null || _b === void 0 ? void 0 : _b.id;
         if (!userId || !chatId) {
             res.status(403).json({
                 message: "Missing fields required"

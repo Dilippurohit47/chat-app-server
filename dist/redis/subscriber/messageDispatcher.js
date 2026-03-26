@@ -10,24 +10,23 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.createRedisMessageHandler = void 0;
-const createRedisMessageHandler = ({ saveMessage, sendRecentChats, messageAcknowledge, redis, prisma, getUserSocket, isUserConnected }) => {
+const jobConfig_1 = require("../../queue/jobConfig");
+const messages_1 = require("../../routes/messages");
+const connectionManager_1 = require("../../ws/connectionManager");
+const createRedisMessageHandler = ({ saveMessage, sendRecentChats, messageAcknowledge, redis, prisma, getUserSocket, isUserConnected, messageQueue }) => {
     return (msg) => __awaiter(void 0, void 0, void 0, function* () {
         const data = JSON.parse(msg.toString());
-        if (data.type === "ping")
-            return;
         if (data.type === "personal-msg") {
             const receiverId = data.receiverId;
+            let isChatActive = (0, connectionManager_1.getActiveChatId)(receiverId) === data.chatId;
+            let messageStatus = isChatActive ? "seen" : "sent";
+            yield messageQueue.add("save-message", Object.assign(Object.assign({}, data), { isChatActive }), jobConfig_1.SAVE_MESSAGE_JOB_OPTIONS);
+            let ws = getUserSocket(data.senderId);
+            ws.send(JSON.stringify({
+                type: "message-acknowledge",
+                messages: [{ id: data.tempId, clientSideMessageId: data.tempId, status: messageStatus }],
+            }));
             if (data.senderId && receiverId && data.receiverContent) {
-                let { messageSent, messageId } = yield saveMessage(data.tempId, data.senderId, receiverId, data.isMedia, data.receiverContent, data.senderContent);
-                if (!messageSent)
-                    return;
-                if (isUserConnected(data.senderId)) {
-                    let ws = getUserSocket(data.senderId);
-                    ws.send(JSON.stringify({
-                        type: "message-acknowledge",
-                        messages: [{ id: messageId, clientSideMessageId: data.tempId, status: 'sent' }],
-                    }));
-                }
                 if (isUserConnected(receiverId)) {
                     let ws = getUserSocket(receiverId);
                     ws.send(JSON.stringify({
@@ -40,38 +39,36 @@ const createRedisMessageHandler = ({ saveMessage, sendRecentChats, messageAcknow
                         id: data.tempId
                     }));
                 }
-                const senderRecentChats = yield sendRecentChats(data.senderId);
-                const receiverRecentChats = yield sendRecentChats(data.receiverId);
-                if (senderRecentChats) {
-                    redis.set(`user:${data.senderId}:chats`, JSON.stringify(senderRecentChats), {
-                        EX: 60 * 10
-                    });
+            }
+            yield (0, messages_1.upsertRecentChats)(data.senderId, data.receiverId, data.receiverContent, data.senderContent, isChatActive, data.isMedia);
+            const senderRecentChats = yield sendRecentChats(data.senderId);
+            const receiverRecentChats = yield sendRecentChats(data.receiverId);
+            if (senderRecentChats) {
+                redis.set(`user:${data.senderId}:chats`, JSON.stringify(senderRecentChats), {
+                    EX: 60 * 10
+                });
+            }
+            if (receiverRecentChats) {
+                redis.set(`user:${data.receiverId}:chats`, JSON.stringify(receiverRecentChats), {
+                    EX: 60 * 10
+                });
+            }
+            if (isUserConnected(data.senderId)) {
+                let senderWs = getUserSocket(data.senderId);
+                if (senderWs && senderWs.readyState === 1) {
+                    senderWs.send(JSON.stringify({
+                        type: "recent-chats",
+                        chats: senderRecentChats,
+                    }));
                 }
-                if (receiverRecentChats) {
-                    redis.set(`user:${data.receiverId}:chats`, JSON.stringify(receiverRecentChats), {
-                        EX: 60 * 10
-                    });
-                }
-                if (isUserConnected(data.senderId)) {
-                    let senderWs = getUserSocket(data.senderId);
-                    if (senderWs && senderWs.readyState === 1) {
-                        senderWs.send(JSON.stringify({
-                            type: "recent-chats",
-                            chats: senderRecentChats,
-                        }));
-                    }
-                }
-                if (isUserConnected(receiverId)) {
-                    let receiverWs = getUserSocket(receiverId);
-                    if (receiverWs && receiverWs.readyState === 1) {
-                        receiverWs.send(JSON.stringify({
-                            type: "recent-chats",
-                            chats: receiverRecentChats,
-                        }));
-                    }
-                    else {
-                        console.log(`❌ WebSocket not open for receiver (${receiverId})`);
-                    }
+            }
+            if (isUserConnected(data.receiverId)) {
+                let receiverWs = getUserSocket(data.receiverId);
+                if (receiverWs && receiverWs.readyState === 1) {
+                    receiverWs.send(JSON.stringify({
+                        type: "recent-chats",
+                        chats: receiverRecentChats,
+                    }));
                 }
             }
         }
@@ -203,7 +200,6 @@ const createRedisMessageHandler = ({ saveMessage, sendRecentChats, messageAcknow
                         messages: updatedMessages
                     }));
                 }
-                console.log("messages send");
             }
         }
     });

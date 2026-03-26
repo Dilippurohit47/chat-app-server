@@ -25,36 +25,6 @@ const CLIENT_ID = process.env.CLIENT_ID;
 const CLIENT_SECRET = process.env.CLIENT_SECRET;
 const oauth2Client = new googleapis_1.google.auth.OAuth2(CLIENT_ID, CLIENT_SECRET, "postmessage");
 const app = express_1.default.Router();
-const authMiddleware = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        const cookie = req.cookies["chat-token"];
-        if (!cookie) {
-            return res.status(404).json({
-                message: "Please login first",
-            });
-        }
-        const decoded = jsonwebtoken_1.default.verify(cookie, process.env.JWT_SECRET);
-        if (!decoded) {
-            res.status(403).json({
-                success: false,
-                message: "Unauthorized",
-            });
-            return;
-        }
-        if (typeof decoded === "string") {
-            return;
-        }
-        req.user = decoded;
-        next();
-    }
-    catch (error) {
-        console.log(error);
-        res.status(500).json({
-            succcess: false,
-            message: "Internal server error",
-        });
-    }
-});
 app.post("/sign-in", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { email, password } = req.body;
@@ -316,7 +286,6 @@ app.post("/google/callback", (req, res) => __awaiter(void 0, void 0, void 0, fun
             },
         });
         if (user) {
-            console.log("user", user);
             const token = (0, helper_1.sendToken)(res, user);
             yield prisma_1.prisma.user.update({
                 where: {

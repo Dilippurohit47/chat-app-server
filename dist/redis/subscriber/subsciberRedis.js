@@ -21,6 +21,7 @@ const messageDispatcher_1 = require("./messageDispatcher");
 const prisma_1 = require("../../infra/database/prisma");
 const connectionManager_1 = require("../../ws/connectionManager");
 const messages_1 = require("../../routes/messages");
+const messageQueue_1 = require("../../queue/messageQueue");
 const redis_2 = __importDefault(require("../redis"));
 dotenv_1.default.config();
 let subscriber;
@@ -55,7 +56,8 @@ const handleRedisMessage = (0, messageDispatcher_1.createRedisMessageHandler)({
     isUserConnected: connectionManager_1.isUserConnected,
     redis: redis_2.default,
     messageAcknowledge: messages_1.messageAcknowledge,
-    sendRecentChats: messages_1.sendRecentChats
+    sendRecentChats: messages_1.sendRecentChats,
+    messageQueue: messageQueue_1.messageQueue
 });
 function startRedisSubscriber() {
     return __awaiter(this, void 0, void 0, function* () {
