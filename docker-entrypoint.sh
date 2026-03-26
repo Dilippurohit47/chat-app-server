@@ -1,5 +1,13 @@
 #!/bin/sh
-set -e  # exit immediately if a command fails
+set -e
+
+echo "⏳ Waiting for Postgres..."
+
+until nc -z postgres 5432; do
+  sleep 1
+done
+
+echo "✅ Postgres is up"
 
 echo "Running Prisma migrations..."
 npx prisma migrate deploy

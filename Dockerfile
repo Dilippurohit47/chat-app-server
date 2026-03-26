@@ -2,12 +2,16 @@ FROM node:18-alpine
 
 WORKDIR /app
 
+ENV NODE_ENV=production
+
 COPY package*.json ./
 RUN npm install --omit=dev
 
 COPY dist ./dist
 COPY prisma ./prisma
 COPY docker-entrypoint.sh .
+
+RUN apk add --no-cache netcat-openbsd
 
 RUN npx prisma generate
 RUN chmod +x docker-entrypoint.sh
