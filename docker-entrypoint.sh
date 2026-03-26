@@ -12,5 +12,13 @@ echo "✅ Postgres is up"
 echo "Running Prisma migrations..."
 npx prisma migrate deploy
 
+echo "Waiting for redis..."
+
+until nc -z redis 6379; do
+  sleep 1
+done
+
+echo "redis is ready "
+
 echo "✅ Starting Node app..."
 npm start
