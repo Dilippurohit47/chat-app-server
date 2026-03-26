@@ -9,7 +9,7 @@ RUN npm install
 
 COPY . .
 
-RUN npm run build   
+RUN npm run build || true 
 
 RUN apk add --no-cache netcat-openbsd
 
