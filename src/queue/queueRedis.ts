@@ -6,4 +6,4 @@ const queueRedis = new Redis({
   maxRetriesPerRequest: null
 });
 
-export default queueRedis;
+export default queueRedis; 
