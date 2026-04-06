@@ -4,11 +4,11 @@ import { WebSocketServer } from "ws";
 export const startWsHeartbeat = (wss: WebSocketServer, intervalMs = 30000) => {
   return setInterval(() => {
     wss.clients.forEach((ws: any) => {
-      if (!ws.isAlive) {
-        ws.terminate();
-        return;
-      }
-      ws.isAlive = false;
+      // if (!ws.isAlive) {
+      //   ws.terminate();
+      //   return;
+      // }
+      ws.isAlive = true;
       ws.ping();
     });
   }, intervalMs);

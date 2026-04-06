@@ -14,15 +14,20 @@ export const userHandler = async(data ,ws:WebSocket ,wss:WebSocketServer,prisma:
 }
 
 const userInfoHandler = async(data,ws:WebSocket ,wss:WebSocketServer,prisma:PrismaClient)=>{
-            const user = await prisma.user.findUnique({
-              where: {
-                id: data.userId,
-              },
-            });
+            // const user = await prisma.user.findUnique({
+            //   where: {
+            //     id: data.userId,
+            //   },
+            // });
     
-            if (user) {
-              setUser(user.id, ws, user);
+            // if (user) {
+            let user ={
+              id:data.userId,
+              name:"test"
+            }
+              setUser(data.userId, ws, user);
     
+              return
               const connectedUsers = getAllConnectedUserIds();
               if (connectedUsers.length) {
                 await redis.sAdd("online-users", ...connectedUsers);
@@ -36,4 +41,4 @@ const userInfoHandler = async(data,ws:WebSocket ,wss:WebSocketServer,prisma:Pris
                 );
               });
             }
-}
+          // }

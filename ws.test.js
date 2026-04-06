@@ -1,23 +1,27 @@
 import ws from "k6/ws";
-import { check } from "k6";
-export const options = {
-  scenarios: {
-    connections: {
-      executor: "ramping-vus",
-      startVUs: 0,
-      stages: [
-        { duration: "2  m", target: 10000 }, 
-        { duration: "3m", target: 10000 }, 
-      ],
-    },
-  },
-};
+import { sleep } from "k6";
 
 export default function () {
-  const res = ws.connect("ws://localhost:8080", {}, (socket) => {
-    socket.on("open", () => {});
-    socket.setInterval(() => {}, 10000); // keep alive only
+  ws.connect("ws://localhost:8080", {}, function (socket) {
+
+    socket.on("open", () => {
+      // register user ONCE
+      socket.send(JSON.stringify({
+        type: "user-info",
+        userId: String(__VU)
+      }));
+
+      // then send messages
+      socket.setInterval(() => {
+        socket.send(JSON.stringify({
+          type: "load-test",
+          senderId: String(__VU),
+          message: "hello"
+        }));
+      }, 50);
+    });
+
   });
 
-  check(res, { "connected": (r) => r && r.status === 101 });
+  sleep(60);
 }

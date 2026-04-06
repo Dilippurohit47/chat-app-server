@@ -16,9 +16,22 @@ export const messageRouter = async (
   connectedUserId:string
 ) => {
 
+
+
   const rawData = message.toString() 
   const data = JSON.parse(rawData)
   
+
+  
+      if (data.type === "load-test") {
+  ws.send(JSON.stringify({
+    type: "load-test-ack",
+    id: data.id 
+  }));
+
+  return;
+}
+
    if (pubSubCases.includes(data.type)) {
     await publisher.publish("messages", rawData);
     return; 
