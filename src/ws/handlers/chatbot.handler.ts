@@ -1,9 +1,9 @@
 
 import { WebSocket } from "ws";
-// import { getInfoFromCollection } from "../../infra/vector/vector-db";
 import { getChatBotResponse } from "../../routes/aiChatBot";
 import { getUserSocket } from "../connectionManager";
 import { logWarn } from "../../utils/helper";
+import { getInfoFromCollection } from "../../infra/vector/vector-db";
 
 export const chatbotHandler = (data,ws:WebSocket) =>{
     switch (data.type) {
@@ -17,8 +17,8 @@ export const chatbotHandler = (data,ws:WebSocket) =>{
 const getChatBotResponseAndSend = async(data,wss:WebSocket)=>{
         const query = data.query;
         const ws = getUserSocket(data?.receiverId);
-        // const personalData = (await getInfoFromCollection(query)) as string[];
-        const answer = await getChatBotResponse(query || "hello", ["Dilip raj Purohit best software engineer"]);
+        const personalData = (await getInfoFromCollection(query)) as string[];
+        const answer = await getChatBotResponse(query || "hello", personalData || ["Dilip raj Purohit best software engineer"]);
         if (ws) {
           ws.send(
             JSON.stringify({
