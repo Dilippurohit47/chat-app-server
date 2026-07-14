@@ -110,10 +110,13 @@ export const saveMessage = async (
   isMedia:boolean,
   receiverContent:string,
   senderContent:string,
+  isChatActive:boolean,
 ) => {
   try { 
-const chat  = await getChatWithUsers(senderId,receiverId )
-if(!chat) return  {messageSent:false , messageId:null}
+
+const chat = await upsertRecentChats(senderId, receiverId, receiverContent, senderContent, isChatActive, isMedia);
+if (!chat) return { messageSent: false, messageId: null };
+
 let message = await prisma.messages.upsert({
   where: {
     id: tempId

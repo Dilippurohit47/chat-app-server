@@ -1,4 +1,3 @@
-import publisher from "../redis/publisher/publisherRedis";
 import { WebSocketServer, WebSocket } from "ws";
 import { messageRouter } from "./messageRouter"; 
 import {  handleConnectionClosed } from "./handlers/close.handler";

@@ -38,7 +38,6 @@ export async function connectSubscriber() {
 }
 
 const handleRedisMessage = createRedisMessageHandler({
-  saveMessage,
   prisma,
   getUserSocket,
   isUserConnected,

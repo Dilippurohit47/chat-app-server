@@ -253,6 +253,19 @@ app.get("/refresh", async (req: Request, res: Response) => {
       return;
     }
 
+
+      const newRefresh = jwt.sign({ id: user.id }, JWT_PASSWORD, { expiresIn: "7d" });
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { refreshToken: newRefresh },   
+  });
+
+  res.cookie("chat-token", newRefresh, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+  });
+
     if (!user) {
       res.status(403).json({ message: "Invalid refresh token" });
       return;

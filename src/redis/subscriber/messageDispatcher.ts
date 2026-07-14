@@ -1,10 +1,9 @@
 import { SAVE_MESSAGE_JOB_OPTIONS } from "../../queue/jobConfig";
-import { upsertRecentChats } from "../../routes/messages";
 import { getActiveChatId } from "../../ws/connectionManager";
 
 
 
-export const createRedisMessageHandler = ({ saveMessage ,sendRecentChats ,messageAcknowledge ,redis , prisma ,getUserSocket ,isUserConnected , messageQueue}) => {
+export const createRedisMessageHandler = ({  sendRecentChats ,messageAcknowledge ,redis , prisma ,getUserSocket ,isUserConnected , messageQueue}) => {
   return async (msg) => { 
     const data = JSON.parse(msg.toString());
     if (data.type === "personal-msg") {
@@ -41,45 +40,44 @@ export const createRedisMessageHandler = ({ saveMessage ,sendRecentChats ,messag
 }
 
 
-await upsertRecentChats(data.senderId , data.receiverId ,data.receiverContent ,data.senderContent , isChatActive , data.isMedia)
-   const senderRecentChats = await sendRecentChats(data.senderId);
-        const receiverRecentChats = await sendRecentChats(data.receiverId);
+  //  const senderRecentChats = await sendRecentChats(data.senderId);
+  //       const receiverRecentChats = await sendRecentChats(data.receiverId);
 
 
-        if(senderRecentChats){
-  redis.set( `user:${data.senderId}:chats`,JSON.stringify(senderRecentChats),{
-              EX:60*10
-            })
-        }
-        if(receiverRecentChats){
-         redis.set( `user:${data.receiverId}:chats`,JSON.stringify(receiverRecentChats), { 
-              EX:60*10 
-            })
-        }
+  //       if(senderRecentChats){
+  // redis.set( `user:${data.senderId}:chats`,JSON.stringify(senderRecentChats),{
+  //             EX:60*10
+  //           })
+  //       }
+  //       if(receiverRecentChats){
+  //        redis.set( `user:${data.receiverId}:chats`,JSON.stringify(receiverRecentChats), { 
+  //             EX:60*10 
+  //           })
+  //       }
        
-        if (isUserConnected(data.senderId)) {
-          let senderWs = getUserSocket(data.senderId);
-          if (senderWs && senderWs.readyState === 1) {
-            senderWs.send(
-              JSON.stringify({ 
-                type: "recent-chats",   
-                chats: senderRecentChats,
-              })
-            ); 
-          }
-        } 
+        // if (isUserConnected(data.senderId)) {
+        //   let senderWs = getUserSocket(data.senderId);
+        //   if (senderWs && senderWs.readyState === 1) {
+        //     senderWs.send(
+        //       JSON.stringify({ 
+        //         type: "recent-chats",   
+        //         chats: senderRecentChats,
+        //       })
+        //     ); 
+        //   }
+        // } 
 
-        if (isUserConnected(data.receiverId)) {
-          let receiverWs = getUserSocket(data.receiverId); 
-          if (receiverWs && receiverWs.readyState === 1) { 
-            receiverWs.send(
-              JSON.stringify({
-                type: "recent-chats", 
-                chats: receiverRecentChats,
-              })
-            );
-          } 
-        }     
+        // if (isUserConnected(data.receiverId)) {
+        //   let receiverWs = getUserSocket(data.receiverId); 
+        //   if (receiverWs && receiverWs.readyState === 1) { 
+        //     receiverWs.send(
+        //       JSON.stringify({
+        //         type: "recent-chats", 
+        //         chats: receiverRecentChats,
+        //       })
+        //     );
+        //   } 
+        // }     
 
 
     }
@@ -221,6 +219,15 @@ await upsertRecentChats(data.senderId , data.receiverId ,data.receiverContent ,d
         }
       }
       
+    }
+    if(data.type === "recent-chats"){
+      console.log("sendin chats 123")
+ if (isUserConnected(data.userId)) {
+    const ws = getUserSocket(data.userId);
+    if (ws?.readyState === 1) {
+      ws.send(JSON.stringify({ type: "recent-chats", chats: data.chats }));
+    }
+  }
     }
 }
 }
