@@ -5,9 +5,11 @@
   "main": "index.js",
   "scripts": {
     "dev": "tsx watch src/index.ts",
+    "workers": "concurrently \"cross-env PORT=3001 tsx watch src/worker.js\" \"cross-env PORT=3002 tsx watch src/worker.js\" \"cross-env PORT=3003 tsx watch src/worker.js\"",
     "build": "tsc",
     "start": "node dist/index.js",
-     "migrate": "dotenv -e .env.local -- prisma migrate dev"
+    "migrate": "prisma migrate dev",
+"migrate:deploy": "prisma migrate deploy"
   },
   "keywords": [],
   "author": "",
@@ -30,6 +32,7 @@
     "bullmq": "^5.71.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
+    "cross-env": "^10.1.0",
     "dotenv": "^16.4.7",
     "dotenv-cli": "^11.0.0",
     "express": "^4.21.2",
